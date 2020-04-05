@@ -55,10 +55,10 @@ local timer = Chrono()
 ]]
 
 --First, we load the Pathfinder
-local pap = require("pajarito")
+local pajarito = require("pajarito")
 
 --Init the pathfinder using the tilemap and their dimensions
-pap.init(tile_map, tile_map_width, tile_map_height)
+pajarito.init(tile_map, tile_map_width, tile_map_height)
 
 --we create a variable to store the path
 
@@ -77,18 +77,18 @@ table_of_weights[9] = 0  --lava     tile 9 -> 0
 table_of_weights[10] = 0 --water   tile 10 -> 0
 
 --set the table to the tilemap
-pap.setWeigthTable(table_of_weights)
+pajarito.setWeigthTable(table_of_weights)
 --[[
 You can change the values on the table directly and because the table is referenced,
 you do not have the need to resend the table.
 ]]
 
 --we clear all the previously marked nodes
---pap.clearNodeInfo() 
+--pajarito.clearNodeInfo() 
 --because is the first run, is not necessary
 
 --Generate a range of nodes stating at the given point
-pap.getNodesOnRange(saved_x,saved_y,2) 
+pajarito.buildRange(saved_x,saved_y,2) 
 
 --[[
     There are two ways to access to the marked/border nodes.
@@ -101,14 +101,14 @@ pap.getNodesOnRange(saved_x,saved_y,2)
 
 --print the values or "deep of range" of the nodes
 function printNodeValues()
-    local t = pap.getMarkedNodes() --here we ask
+    local t = pajarito.getMarkedNodes() --here we ask
     
     for _,node in pairs(t) do
         love.graphics.print(node.d, node.x*17, node.y*17)
     end
     
     if show_border then
-        t = pap.getBorderNodes() 
+        t = pajarito.getBorderNodes() 
         for _,node in pairs(t) do
             love.graphics.print(node.d, node.x*17, node.y*17)
         end
@@ -140,7 +140,7 @@ function drawTileMap()
                 -- Here we ask if on that position exist a node marked
                 -- Fear not nested loops!, there is no one in "isNodeMarked"
                 
-                if pap.isNodeMarked(x,y) then
+                if pajarito.isNodeMarked(x,y) then
                     --the next tile will be a "dark blue tone"
                     tileset:setColor(0,0.1,1) 
                     --is added a semitransparent tile over this one. 
@@ -148,14 +148,14 @@ function drawTileMap()
                     
                     --once a path is generated, pajarito also creates a
                     --dictionary for quick look up
-                    if pap.isNodeOnPath(x,y) then
+                    if pajarito.isNodeOnPath(x,y) then
                         tileset:setColor(1,1,1,1) 
                         tileset:add(tileset_list[14],x*17,y*17)
                     end
                 end
                 
                 --mark the border in a red hue
-                if show_border and pap.isNodeBorder(x,y) then 
+                if show_border and pajarito.isNodeBorder(x,y) then 
                     tileset:setColor(1,0,0,1)
                     tileset:add(tileset_list[29],x*17,y*17)
                 end
@@ -175,19 +175,16 @@ function drawTileMap()
         end
         y=y+1
     end
-    
-    love.graphics.draw(tileset)
 end
 
 --this is the function called every time the slider of "Range" changes.
 function updateRange(x,y,range)
-    pap.clearNodeInfo() --clear all the previously marked nodes
-    pap.getNodesOnRange(x,y,range) --we do a new range stating on pos x,y
+    pajarito.buildRange(x,y,range) --we do a new range stating on pos x,y
 end
 
 --This is the function called each time you click on the map.
 function saveNewStartPos()
-    if pap.isNodeOnGrid(m_ix,m_iy) then 
+    if pajarito.isNodeOnGrid(m_ix,m_iy) then 
         updateRange(m_ix,m_iy,range_slider:GetValue())
         saved_x = m_ix
         saved_y = m_iy
@@ -196,8 +193,8 @@ end
 
 --This function, is called to allow the diagonal movement
 function setDiagonal(diagonal)
-    if pap.getDiagonal() ~= diagonal then
-        pap.useDiagonal(diagonal)
+    if pajarito.getDiagonal() ~= diagonal then
+        pajarito.useDiagonal(diagonal)
         updateRange(saved_x,saved_y,range_slider:GetValue())
     end
 end
@@ -213,7 +210,7 @@ function updatePath(x,y)
     point is in that list. returns a table listing nodes
     from the starting point and ends on the destination
     --]]
-        generated_path = pap.getPathInsideRange(x,y)
+        generated_path = pajarito.getPathInsideRange(x,y)
     end
 end
 
@@ -317,7 +314,7 @@ button:SetPos(40,90)
 button:SetText("Go back to main menu")
 button.OnClick = function(object, x, y)
     loveframes.RemoveAll()
-    pap.clearNodeInfo()
+    pajarito.clearNodeInfo()
     SCENA_MANAGER.pop()
 end
 
@@ -485,7 +482,7 @@ function Main()
             
         end
         
-        drawTileMap()
+        love.graphics.draw(tileset)
         
         if checkbox1:GetChecked() then
             printNodeValues()
@@ -516,7 +513,7 @@ function Main()
             if d > 8 then
                 local a = (relas_m-pres_m)
                 --cam.drag(a.x,a.y)
-                if draw_mode and draw_mode and pap.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -532,7 +529,7 @@ function Main()
                 relas_m.x = x
                 relas_m.y = y
                 is_mouse_pressed = true
-                if draw_mode and pap.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -552,9 +549,10 @@ function Main()
                     end
                 end
             end
-            if draw_mode and pap.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
+            if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
                 tile_map[m_iy][m_ix] = tile_to_draw
                 updateRange(saved_x,saved_y,range_slider:GetValue())
+                drawTileMap()
             end
             is_mouse_pressed = false
         end

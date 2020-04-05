@@ -49,17 +49,17 @@ local range_slider = nil
 ]]
 
 --First, we load the Pathfinder
-local pap = require("pajarito")
+local pajarito = require("pajarito")
 
 --Initialize the pathfinder using the tilemap and their dimensions
-pap.init(tile_map, tile_map_width, tile_map_height)
+pajarito.init(tile_map, tile_map_width, tile_map_height)
 
 --we clear all the previously marked nodes
---pap.clearNodeInfo() 
+--pajarito.clearNodeInfo() 
 --because is the first run, is not necessary
 
 --Generate a range of nodes stating at the given point
-pap.getNodesOnRange(saved_x,saved_y,2) 
+pajarito.buildRange(saved_x,saved_y,2) 
 
 --[[
     There are two ways to access to the marked/border nodes.
@@ -72,14 +72,14 @@ pap.getNodesOnRange(saved_x,saved_y,2)
 
 --print the values or "deep of range" of the nodes
 function printNodeValues()
-    local t = pap.getMarkedNodes() --here we ask
+    local t = pajarito.getInRangeNodes() --here we ask
     
     for _,node in pairs(t) do
         love.graphics.print(node.d, node.x*17, node.y*17)
     end
     
     if show_border then
-        t = pap.getBorderNodes() 
+        t = pajarito.getBorderNodes() 
         for _,node in pairs(t) do
             love.graphics.print(node.d, node.x*17, node.y*17)
         end
@@ -88,7 +88,7 @@ function printNodeValues()
 end
 
 --add the tiles of the map to a spritebath to draw it. 
-function drawTileMap()
+function updateTileSet()
     tileset:clear()
         
     local y = 1
@@ -102,7 +102,7 @@ function drawTileMap()
             -- Here we ask if on that position exist a node marked
             -- Fear not nested loops!, there is no one in "isNodeMarked"
             
-            if pap.isNodeMarked(x,y) then
+            if pajarito.isPointInRange(x,y) then
                 --the next tile will be a "dark blue tone"
                 tileset:setColor(0,0.1,1) 
                 --is added a semitransparent tile over this one. 
@@ -110,15 +110,9 @@ function drawTileMap()
             end
             
             --mark the border in a red hue
-            if show_border and pap.isNodeBorder(x,y) then 
+            if show_border and pajarito.isPointInRangeBorder(x,y) then 
                 tileset:setColor(1,0,0,1)
                 tileset:add(tileset_list[29],x*17,y*17)
-            end
-            
-            --use the mouse position to put a marker on the map
-            if x == m_ix and y == m_iy then
-                tileset:setColor(0,0,0,1)
-                tileset:add(tileset_list[13],x*17,y*17)
             end
             
             tileset:setColor(1,1,1,1)
@@ -126,21 +120,18 @@ function drawTileMap()
         end
         y=y+1
     end
-    
-    love.graphics.draw(tileset)
 end
 
 --this is the function called every time the slider of "Range" changes.
 function updateRange(x,y,range)
-    pap.clearNodeInfo() --clear all the previously marked nodes
-    pap.getNodesOnRange(x,y,range) --we do a new range stating on pos x,y
+    pajarito.buildRange(x,y,range) --we do a new range stating on pos x,y
+    updateTileSet()
 end
 
 --This is the function called each time you click on the map.
 function saveNewStartPos()
-    if pap.isNodeOnGrid(m_ix,m_iy) then 
-        pap.clearNodeInfo()
-        pap.getNodesOnRange(m_ix,m_iy,range_slider:GetValue())
+    if pajarito.isNodeOnGrid(m_ix,m_iy) then 
+        pajarito.buildRange(m_ix,m_iy,range_slider:GetValue())
         saved_x = m_ix
         saved_y = m_iy
     end
@@ -148,8 +139,8 @@ end
 
 --and this function, is called to allow the diagonal movement
 function setDiagonal(diagonal)
-    if pap.getDiagonal() ~= diagonal then
-        pap.useDiagonal(diagonal)
+    if pajarito.getDiagonal() ~= diagonal then
+        pajarito.useDiagonal(diagonal)
         updateRange(saved_x,saved_y,range_slider:GetValue())
     end
 end
@@ -172,10 +163,10 @@ local cam = Camera(
     -(180)+(tile_map_height*8))
 
 --load a tileset image
-local ima = love.graphics.newImage('tileset.png')
+local tileset_image= love.graphics.newImage('tileset.png')
 
 --tileset contains the spritebatch we create from the source image
-tileset = love.graphics.newSpriteBatch(ima,2000)
+tileset = love.graphics.newSpriteBatch(tileset_image,2000)
 
 --tileset_list containst the quads used to draw the map
 tileset_list = makeQuads(320,320,16,16)
@@ -237,7 +228,7 @@ button:SetPos(40,80)
 button:SetText("Go back to main menu")
 button.OnClick = function(object, x, y)
     loveframes.RemoveAll()
-    pap.clearNodeInfo()
+    pajarito.clearNodeInfo()
     SCENA_MANAGER.pop()
 end
 
@@ -251,6 +242,9 @@ end
 function Main()
     local self = Escena()
     love.window.setTitle("Pajarito Pathfinder Example: Elemental")
+    updateTileSet()
+    
+    
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
         love.graphics.setColor(1,1,1)
@@ -266,7 +260,8 @@ function Main()
             m_iy = math.floor(y/17)
         end
         
-        drawTileMap()
+        love.graphics.draw(tileset)
+        love.graphics.draw(tileset_image,tileset_list[13],m_ix*17,m_iy*17)
         
         if checkbox1:GetChecked() then
             printNodeValues()
@@ -280,8 +275,10 @@ function Main()
     function self.update(dt)
         cam.update(dt)
         --if you ask, loveframes is updated on the main.
-        show_border = checkbox2:GetChecked()
-        
+        if show_border ~= checkbox2:GetChecked() then
+            show_border = checkbox2:GetChecked()
+            updateTileSet()
+        end
         setDiagonal(checkbox3:GetChecked())
     end
     
@@ -320,6 +317,7 @@ function Main()
             else
                 if not mouseOnGUI(container) then
                     saveNewStartPos()
+                    updateTileSet()
                 end
             end
             is_mouse_pressed = false
