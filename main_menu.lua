@@ -3,14 +3,14 @@ example_list[1] = {'elemental','Elemental'}
 example_list[2] = {'weights','Using Weights'}
 example_list[3] = {'path_in_range','Path In Range'}
 example_list[4] = {'pathfinder','Standar Pathfinder'}
-example_list[5] = {'hexagonal','Hexagonal'}
+--example_list[5] = {'hexagonal','Hexagonal'}
 --example_list[6] = {'level','Minigame'}
 
 local function createGUI()
     local list = loveframes.Create("list")
-    list:SetSize(240, 400)
-	list:SetPadding(5)
-	list:SetSpacing(5)
+    list:SetSize(240, 130)
+    list:SetPadding(5)
+    list:SetSpacing(5)
     list:CenterX()
     list:CenterY()
     --button:SetText("Elemental")
@@ -61,8 +61,11 @@ function Main()
     
     function self.draw()
         love.graphics.clear(0.5,0.5,0.5)
+        love.graphics.setColor(0,0,0)
+        love.graphics.print('Pajarito Pathfinder Examples',231,101)
+        
         love.graphics.setColor(1,1,1)
-        love.graphics.print('Pajarito Pathfinder Examples')
+        love.graphics.print('Pajarito Pathfinder Examples',230,100)
     end
     
     function self.update(dt)

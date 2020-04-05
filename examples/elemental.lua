@@ -64,7 +64,7 @@ pajarito.buildRange(saved_x,saved_y,2)
 --[[
     There are two ways to access to the marked/border nodes.
     
-    1) Ask to the lib for a list of the marked ones and iterate it.
+    1) Ask to the lib for a list of nodes in range and iterate it.
     2) In the loop used to draw the tile map, check in a one by one.
    
    The following functions are examples of that. 

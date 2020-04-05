@@ -52,10 +52,10 @@ local tile_to_draw = 1
 ]]
 
 --First, we load the Pathfinder
-local pap = require("pajarito")
+local pajarito = require("pajarito")
 
 --Init the pathfinder using the tilemap and their dimensions
-pap.init(tile_map, tile_map_width, tile_map_height, true)
+pajarito.init(tile_map, tile_map_width, tile_map_height, true)
 
 --now, we define a table of weights and the default weights cost
 --note, values equal or less than 0, are considered impassable terrain
@@ -70,18 +70,18 @@ table_of_weights[9] = 0  --lava     tile 9 -> 0
 table_of_weights[10] = 0 --water   tile 10 -> 0
 
 --set the table to the tilemap
-pap.setWeigthTable(table_of_weights)
+pajarito.setWeigthTable(table_of_weights)
 --[[
 You can change the values on the table directly and because the table is referenced,
 you do not have the need to resend the table.
 ]]
 
 --we clear all the previously marked nodes
---pap.clearNodeInfo() 
+--pajarito.clearNodeInfo() 
 --because is the first run, is not necessary
 
 --Generate a range of nodes stating at the given point
-pap.getNodesOnRange(saved_x,saved_y,2) 
+pajarito.buildRange(saved_x,saved_y,2) 
 
 --[[
     There are two ways to access to the marked/border nodes.
@@ -94,14 +94,14 @@ pap.getNodesOnRange(saved_x,saved_y,2)
 
 --print the values or "deep of range" of the nodes
 function printNodeValues()
-    local t = pap.getMarkedNodes() --here we ask
+    local t = pajarito.getMarkedNodes() --here we ask
     
     for _,node in pairs(t) do
         love.graphics.print(node.d, node.x*17, node.y*17)
     end
     
     if show_border then
-        t = pap.getBorderNodes() 
+        t = pajarito.getBorderNodes() 
         for _,node in pairs(t) do
             love.graphics.print(node.d, node.x*17, node.y*17)
         end
@@ -110,7 +110,7 @@ function printNodeValues()
 end
 
 --add the tiles of the map to a spritebath to draw it. 
-function drawTileMap()
+function updateTileSet()
     tileset:clear()
         
     local y = 1
@@ -121,31 +121,20 @@ function drawTileMap()
             --a tile is added to the be draw... 
             tileset:add(tileset_list[tile],x*17,y*17)
             
-            --if not draw_mode then 
-                -- Here we ask if on that position exist a node marked
-                -- Fear not nested loops!, there is no one in "isNodeMarked"
-                
-                if pap.isNodeMarked(x,y) then
-                    --the next tile will be a "dark blue tone"
-                    tileset:setColor(0,0.1,1) 
-                    --is added a semitransparent tile over this one. 
-                    tileset:add(tileset_list[29],x*17,y*17)
-                end
-                
-                --mark the border in a red hue
-                if show_border and pap.isNodeBorder(x,y) then 
-                    tileset:setColor(1,0,0,1)
-                    tileset:add(tileset_list[29],x*17,y*17)
-                end
-            --end
-            --use the mouse position to put a marker on the map
-            if x == m_ix and y == m_iy then
-                if draw_mode then
-                    tileset:setColor(1,1,1,1)
-                    tileset:add(tileset_list[tile_to_draw],x*17,y*17)
-                end
-                tileset:setColor(0,0,0,1)
-                tileset:add(tileset_list[13],x*17,y*17)
+            -- Here we ask if on that position exist a node marked
+            -- Fear not nested loops!, there is no one in "isNodeMarked"
+            
+            if pajarito.isPointInRange(x,y) then
+                --the next tile will be a "dark blue tone"
+                tileset:setColor(0,0.1,1) 
+                --is added a semitransparent tile over this one. 
+                tileset:add(tileset_list[29],x*17,y*17)
+            end
+            
+            --mark the border in a red hue
+            if show_border and pajarito.isPointInRangeBorder(x,y) then 
+                tileset:setColor(1,0,0,1)
+                tileset:add(tileset_list[29],x*17,y*17)
             end
             
             tileset:setColor(1,1,1,1)
@@ -153,19 +142,17 @@ function drawTileMap()
         end
         y=y+1
     end
-    
-    love.graphics.draw(tileset)
 end
 
 --this is the function called every time the slider of "Range" changes.
 function updateRange(x,y,range)
-    pap.clearNodeInfo() --clear all the previously marked nodes
-    pap.getNodesOnRange(x,y,range) --we do a new range stating on pos x,y
+    pajarito.buildRange(x,y,range) --we do a new range stating on pos x,y
+    updateTileSet()
 end
 
 --This is the function called each time you click on the map.
 function saveNewStartPos()
-    if pap.isNodeOnGrid(m_ix,m_iy) then 
+    if pajarito.isNodeOnGrid(m_ix,m_iy) then 
         updateRange(m_ix,m_iy,range_slider:GetValue())
         saved_x = m_ix
         saved_y = m_iy
@@ -174,8 +161,8 @@ end
 
 --and this function, is called to allow the diagonal movement
 function setDiagonal(diagonal)
-    if pap.getDiagonal() ~= diagonal then
-        pap.useDiagonal(diagonal)
+    if pajarito.getDiagonal() ~= diagonal then
+        pajarito.useDiagonal(diagonal)
         updateRange(saved_x,saved_y,range_slider:GetValue())
     end
 end
@@ -200,10 +187,10 @@ local cam = Camera(
     -(180)+(tile_map_height*8))
 
 --load a tileset image
-local ima = love.graphics.newImage('tileset.png')
+local tileset_image = love.graphics.newImage('tileset.png')
 
 --tileset contains the spritebatch we create from the source image
-tileset = love.graphics.newSpriteBatch(ima,2000)
+tileset = love.graphics.newSpriteBatch(tileset_image,2000)
 
 --tileset_list contains the quads used to draw the map
 tileset_list = makeQuads(320,320,16,16)
@@ -262,7 +249,7 @@ button:SetPos(40,90)
 button:SetText("Go back to main menu")
 button.OnClick = function(object, x, y)
     loveframes.RemoveAll()
-    pap.clearNodeInfo()
+    pajarito.clearNodeInfo()
     SCENA_MANAGER.pop()
 end
 
@@ -308,7 +295,7 @@ checkbox3:SetPos(460, 95)
 function getImaOfTile(tile)
     local can = love.graphics.newCanvas(16,16)
     love.graphics.setCanvas(can)
-    love.graphics.draw(ima,tileset_list[tile])
+    love.graphics.draw(tileset_image,tileset_list[tile])
     love.graphics.setCanvas()
     return love.graphics.newImage(can:newImageData( ))
 end
@@ -437,7 +424,9 @@ function Main()
             
         end
         
-        drawTileMap()
+        love.graphics.draw(tileset)
+        love.graphics.draw(tileset_image,tileset_list[13],m_ix*17,m_iy*17)
+        
         
         if checkbox1:GetChecked() then
             printNodeValues()
@@ -456,7 +445,11 @@ function Main()
     function self.update(dt)
         cam.update(dt)
         --if you ask, loveframes is updated on the main.
-        show_border = checkbox2:GetChecked() 
+        if show_border ~= checkbox2:GetChecked() then
+            show_border = checkbox2:GetChecked()
+            updateTileSet()
+        end
+        
         setDiagonal(checkbox3:GetChecked())
     end
     
@@ -469,7 +462,7 @@ function Main()
             if d > 8 then
                 local a = (relas_m-pres_m)
                 --cam.drag(a.x,a.y)
-                if draw_mode and draw_mode and pap.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -485,7 +478,7 @@ function Main()
                 relas_m.x = x
                 relas_m.y = y
                 is_mouse_pressed = true
-                if draw_mode and pap.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -505,7 +498,7 @@ function Main()
                     end
                 end
             end
-            if draw_mode and pap.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
+            if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
                 tile_map[m_iy][m_ix] = tile_to_draw
                 updateRange(saved_x,saved_y,range_slider:GetValue())
             end

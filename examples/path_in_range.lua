@@ -101,7 +101,7 @@ pajarito.buildRange(saved_x,saved_y,2)
 
 --print the values or "deep of range" of the nodes
 function printNodeValues()
-    local t = pajarito.getMarkedNodes() --here we ask
+    local t = pajarito.getInRangeNodes() --here we ask
     
     for _,node in pairs(t) do
         love.graphics.print(node.d, node.x*17, node.y*17)
@@ -117,57 +117,31 @@ function printNodeValues()
 end
 
 --add the tiles of the map to a spritebath to draw it. 
-function drawTileMap()
+function updateTileSet()
     tileset:clear()
-    
-    --we add numbers to show the cords
-    love.graphics.print('y/x',-5,0)
-    
+        
     local y = 1
     while tile_map[y] do
         local x = 1
-        love.graphics.print(tostring(y),-5,y*17)
         while tile_map[y][x] do
             tile = tile_map[y][x]
-            
-            if y == 1 then
-                love.graphics.print(tostring(x),x*17,0)
-            end
             --a tile is added to the be draw... 
             tileset:add(tileset_list[tile],x*17,y*17)
             
-            --if not draw_mode then 
-                -- Here we ask if on that position exist a node marked
-                -- Fear not nested loops!, there is no one in "isNodeMarked"
-                
-                if pajarito.isNodeMarked(x,y) then
-                    --the next tile will be a "dark blue tone"
-                    tileset:setColor(0,0.1,1) 
-                    --is added a semitransparent tile over this one. 
-                    tileset:add(tileset_list[29],x*17,y*17)
-                    
-                    --once a path is generated, pajarito also creates a
-                    --dictionary for quick look up
-                    if pajarito.isNodeOnPath(x,y) then
-                        tileset:setColor(1,1,1,1) 
-                        tileset:add(tileset_list[14],x*17,y*17)
-                    end
-                end
-                
-                --mark the border in a red hue
-                if show_border and pajarito.isNodeBorder(x,y) then 
-                    tileset:setColor(1,0,0,1)
-                    tileset:add(tileset_list[29],x*17,y*17)
-                end
-            --end
-            --use the mouse position to put a marker on the map
-            if x == m_ix and y == m_iy then
-                if draw_mode then
-                    tileset:setColor(1,1,1,1)
-                    tileset:add(tileset_list[tile_to_draw],x*17,y*17)
-                end
-                tileset:setColor(0,0,0,1)
-                tileset:add(tileset_list[13],x*17,y*17)
+            -- Here we ask if on that position exist a node marked
+            -- Fear not nested loops!, there is no one in "isNodeMarked"
+            
+            if pajarito.isPointInRange(x,y) then
+                --the next tile will be a "dark blue tone"
+                tileset:setColor(0,0.1,1) 
+                --is added a semitransparent tile over this one. 
+                tileset:add(tileset_list[29],x*17,y*17)
+            end
+            
+            --mark the border in a red hue
+            if show_border and pajarito.isPointInRangeBorder(x,y) then 
+                tileset:setColor(1,0,0,1)
+                tileset:add(tileset_list[29],x*17,y*17)
             end
             
             tileset:setColor(1,1,1,1)
@@ -180,6 +154,7 @@ end
 --this is the function called every time the slider of "Range" changes.
 function updateRange(x,y,range)
     pajarito.buildRange(x,y,range) --we do a new range stating on pos x,y
+    updateTileSet()
 end
 
 --This is the function called each time you click on the map.
@@ -199,7 +174,7 @@ function setDiagonal(diagonal)
     end
 end
 
---We request a new path every second
+--We request a new path every 0.15
 function updatePath(x,y)
     
     --if timer has passed already 0.15 seconds
@@ -210,9 +185,13 @@ function updatePath(x,y)
     point is in that list. returns a table listing nodes
     from the starting point and ends on the destination
     --]]
-        generated_path = pajarito.getPathInsideRange(x,y)
+      if pajarito.buildInRangePathTo(x,y) then
+          generated_path = pajarito.getFoundPath()
+      end
     end
 end
+
+local tileset_image = nil
 
 function printPath()
     local i = 1
@@ -229,6 +208,7 @@ function printPath()
                                 (next_node.x+0.5)*17,(next_node.y+0.5)*17)
         end
         love.graphics.setColor(1,1,1)
+        love.graphics.draw(tileset_image,tileset_list[14],node.x*17,node.y*17)
         i=i+1
     end
 end
@@ -251,10 +231,10 @@ local cam = Camera(
     -(180)+(tile_map_height*8))
 
 --load a tileset image
-local ima = love.graphics.newImage('tileset.png')
+tileset_image = love.graphics.newImage('tileset.png')
 
 --tileset contains the spritebatch we create from the source image
-tileset = love.graphics.newSpriteBatch(ima,2000)
+tileset = love.graphics.newSpriteBatch(tileset_image,2000)
 
 --tileset_list contains the quads used to draw the map
 tileset_list = makeQuads(320,320,16,16)
@@ -351,7 +331,7 @@ checkbox3:SetPos(460, 95)
 function getImaOfTile(tile)
     local can = love.graphics.newCanvas(16,16)
     love.graphics.setCanvas(can)
-    love.graphics.draw(ima,tileset_list[tile])
+    love.graphics.draw(tileset_image,tileset_list[tile])
     love.graphics.setCanvas()
     return love.graphics.newImage(can:newImageData( ))
 end
@@ -466,6 +446,9 @@ timer.iniciar()
 function Main()
     local self = Escena()
     love.window.setTitle("Pajarito Pathfinder Example: Path In Range")
+    
+    updateTileSet()
+    
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
         love.graphics.setColor(1,1,1)
@@ -483,6 +466,7 @@ function Main()
         end
         
         love.graphics.draw(tileset)
+        love.graphics.draw(tileset_image,tileset_list[13],m_ix*17,m_iy*17)
         
         if checkbox1:GetChecked() then
             printNodeValues()
@@ -499,7 +483,10 @@ function Main()
     function self.update(dt)
         cam.update(dt)
         --if you ask, loveframes is updated on the main.
-        show_border = checkbox2:GetChecked() 
+        if show_border ~= checkbox2:GetChecked() then
+            show_border = checkbox2:GetChecked()
+            updateTileSet()
+        end
         setDiagonal(checkbox3:GetChecked())
         updatePath(m_ix,m_iy)
     end
@@ -552,7 +539,6 @@ function Main()
             if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
                 tile_map[m_iy][m_ix] = tile_to_draw
                 updateRange(saved_x,saved_y,range_slider:GetValue())
-                drawTileMap()
             end
             is_mouse_pressed = false
         end

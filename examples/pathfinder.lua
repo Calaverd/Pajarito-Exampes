@@ -61,10 +61,10 @@ local gui_list = nil
 ]]
 
 --First, we load the Pathfinder
-local pap = require("pajarito")
+local pajarito = require("pajarito")
 
 --Init the pathfinder using the tilemap and their dimensions
-pap.init(tile_map, tile_map_width, tile_map_height)
+pajarito.init(tile_map, tile_map_width, tile_map_height)
 
 
 --we create a variable to store the path
@@ -82,14 +82,14 @@ table_of_weights[9] = 0  --lava     tile 9 -> 0
 table_of_weights[10] = 0 --water   tile 10 -> 0
 
 --set the table to the tilemap
-pap.setWeigthTable(table_of_weights)
+pajarito.setWeigthTable(table_of_weights)
 
 --we clear all the previously marked nodes
---pap.clearNodeInfo() 
+--pajarito.clearNodeInfo() 
 --because is the first run, is not necessary
 
 --Generate a path
-generated_path = pap.getPath(start_x,start_y,dest_x,dest_y) 
+generated_path = pajarito.pathfinder(start_x,start_y,dest_x,dest_y) 
 
 --[[
     There are two ways to access to the marked/border nodes.
@@ -102,14 +102,14 @@ generated_path = pap.getPath(start_x,start_y,dest_x,dest_y)
 
 --print the values or "deep of range" of the nodes
 function printNodeValues()
-    local t = pap.getMarkedNodes() --here we ask
+    local t = pajarito.getInRangeNodes() --here we ask
     
     for _,node in pairs(t) do
         love.graphics.print(node.d, node.x*17, node.y*17)
     end
     
     if show_border then
-        t = pap.getBorderNodes() 
+        t = pajarito.getBorderNodes() 
         for _,node in pairs(t) do
             love.graphics.print(node.d, node.x*17, node.y*17)
         end
@@ -118,7 +118,7 @@ function printNodeValues()
 end
 
 --add the tiles of the map to a spritebath to draw it. 
-function drawTileMap()
+function updateTileSet()
     tileset:clear()
         
     local y = 1
@@ -132,35 +132,17 @@ function drawTileMap()
             -- Here we ask if on that position exist a node marked
             -- Fear not nested loops!, there is no one in "isNodeMarked"
             
-            if pap.isNodeMarked(x,y) and show_marks then
+            if pajarito.isPointInRange(x,y) and show_marks then
                 --the next tile will be a "dark blue tone"
                 tileset:setColor(0,0.1,1) 
                 --is added a semitransparent tile over this one. 
                 tileset:add(tileset_list[29],x*17,y*17)
             end
             
-            --once a rute is generated, pajarito also creates a
-            --dictionary for quick look up
-            if pap.isNodeOnPath(x,y) and show_path then
-                tileset:setColor(1,1,1,1) 
-                tileset:add(tileset_list[14],x*17,y*17)
-            end
-            
-            --use the mouse position to put a marker on the map
-            if x == m_ix and y == m_iy then
-                tileset:setColor(0,0,0,1)
-                tileset:add(tileset_list[13],x*17,y*17)
-            end
-            
-            --use the start position to put a marker on the map
-            if x == start_x and y == start_y then
-                tileset:setColor(1,1,1,1)
-                tileset:add(tileset_list[22],x*17,y*17)
-            end
-            
-            if x == dest_x and y == dest_y then
-                tileset:setColor(1,1,1,1)
-                tileset:add(tileset_list[16],x*17,y*17)
+            --mark the border in a red hue
+            if show_border and pajarito.isPointInRangeBorder(x,y) then 
+                tileset:setColor(1,0,0,1)
+                tileset:add(tileset_list[29],x*17,y*17)
             end
             
             tileset:setColor(1,1,1,1)
@@ -168,21 +150,19 @@ function drawTileMap()
         end
         y=y+1
     end
-    
-    love.graphics.draw(tileset)
 end
 
 --this is the function called every time the start or destiny point change
 function updatePath()
-    pap.clearNodeInfo()
-    generated_path = pap.getPath(start_x,start_y,dest_x,dest_y) 
+    generated_path = pajarito.pathfinder(start_x,start_y,dest_x,dest_y) 
     updateListPath()
+    updateTileSet()
 end
 
 --and this funtion, is called to allow the diagonal movement
 function setDiagonal(diagonal)
-    if pap.getDiagonal() ~= diagonal then
-        pap.useDiagonal(diagonal)
+    if pajarito.getDiagonal() ~= diagonal then
+        pajarito.useDiagonal(diagonal)
         updatePath()
     end
 end
@@ -211,11 +191,12 @@ function updateListPath()
 end
 
 
+local tileset_image =nil
+
 function printPath()
     local i = 1
     while generated_path[i] do
         local node = generated_path[i]
-        --love.graphics.print(str,542,20*i-80)
         
         --this part draws a line between the center of this node an the next
         love.graphics.setColor(0.2,0.8,0.8)
@@ -224,7 +205,9 @@ function printPath()
             love.graphics.line((node.x+0.5)*17,(node.y+0.5)*17,
                                 (next_node.x+0.5)*17,(next_node.y+0.5)*17)
         end
+        
         love.graphics.setColor(1,1,1)
+        love.graphics.draw(tileset_image,tileset_list[14],node.x*17,node.y*17)
         i=i+1
     end
 end
@@ -249,10 +232,10 @@ local cam = Camera(
     -(180)+(tile_map_height*8))
 
 --load a tileset image
-local ima = love.graphics.newImage('tileset.png')
+tileset_image = love.graphics.newImage('tileset.png')
 
 --tileset contains the spritebatch we create from the source image
-tileset = love.graphics.newSpriteBatch(ima,2000)
+tileset = love.graphics.newSpriteBatch(tileset_image,2000)
 
 --tileset_list contains the quads used to draw the map
 tileset_list = makeQuads(320,320,16,16)
@@ -294,7 +277,7 @@ button:SetPos(40,80)
 button:SetText("Go back to main menu")
 button.OnClick = function(object, x, y)
     loveframes.RemoveAll()
-    pap.clearNodeInfo()
+    pajarito.clearNodeInfo()
     SCENA_MANAGER.pop()
 end
 
@@ -308,7 +291,7 @@ end
 function getImaOfTile(tile)
     local can = love.graphics.newCanvas(16,16)
     love.graphics.setCanvas(can)
-    love.graphics.draw(ima,tileset_list[tile])
+    love.graphics.draw(tileset_image,tileset_list[tile])
     love.graphics.setCanvas()
     return love.graphics.newImage(can:newImageData( ))
 end
@@ -418,6 +401,7 @@ function Main()
     love.window.setTitle("Pajarito Pathfinder Example: PathFinder")
     local moving_start = false
     local moving_dest = false
+    updateTileSet()
     
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
@@ -434,12 +418,25 @@ function Main()
             m_iy = math.floor(y/17)
         end
         
-        drawTileMap()
+        love.graphics.draw(tileset)
+        love.graphics.draw(tileset_image,tileset_list[13],m_ix*17,m_iy*17)
         
-        if show_path then
+        
+        if ((not moving_dest) and (not moving_start)) then
             printPath()
         end
+        if not moving_start then
+            love.graphics.draw(tileset_image,tileset_list[22],start_x*17,start_y*17)
+        else
+            love.graphics.draw(tileset_image,tileset_list[22],x-8,y-8)
+        end
         
+        if not moving_dest then
+            love.graphics.draw(tileset_image,tileset_list[16],dest_x*17,dest_y*17)
+        else
+            love.graphics.draw(tileset_image,tileset_list[16],x-8,y-8)
+        end
+      
         love.graphics.setColor(1,1,1)
         
         love.graphics.pop()
@@ -449,8 +446,11 @@ function Main()
         cam.update(dt)
         --if you ask, loveframes is updated on the main.
         setDiagonal(checkbox3:GetChecked())
-        show_marks = checkbox2:GetChecked() 
-        and ((not moving_dest) and (not moving_start))
+        if show_marks ~= checkbox2:GetChecked() and ((not moving_dest) and (not moving_start)) then
+            show_marks = checkbox2:GetChecked()
+            updateTileSet()
+        end
+        --
     end
     
     function self.mousemoved(x, y, dx, dy, istouch)
@@ -463,7 +463,7 @@ function Main()
                 local a = (relas_m-pres_m)
                 --cam.drag(a.x,a.y)
             end
-            if pap.isNodeOnGrid(m_ix,m_iy) then
+            if pajarito.isNodeOnGrid(m_ix,m_iy) then
                 if moving_start then
                     start_x = m_ix
                     start_y = m_iy
@@ -493,7 +493,7 @@ function Main()
                     moving_dest = true
                     show_path = false
                 elseif (show_path or show_marks) and not mouseOnGUI(container) and
-                    pap.isNodeOnGrid(m_ix,m_iy) 
+                    pajarito.isNodeOnGrid(m_ix,m_iy) 
                     then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
@@ -510,7 +510,7 @@ function Main()
             end
             is_mouse_pressed = false
             
-            if pap.isNodeOnGrid(m_ix,m_iy) then
+            if pajarito.isNodeOnGrid(m_ix,m_iy) then
                 if moving_start then
                     start_x = m_ix
                     start_y = m_iy
