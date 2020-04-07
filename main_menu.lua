@@ -1,8 +1,9 @@
 local example_list = {}
-example_list[1] = {'elemental','Elemental'}
-example_list[2] = {'weights','Using Weights'}
-example_list[3] = {'path_in_range','Path In Range'}
-example_list[4] = {'pathfinder','Standar Pathfinder'}
+example_list[1] = {'graphical_main','Pajarito main.lua'}
+example_list[2] = {'elemental','Elemental'}
+example_list[3] = {'weights','Using Weights'}
+example_list[4] = {'path_in_range','Path In Range'}
+example_list[5] = {'pathfinder','Standar Pathfinder'}
 --example_list[5] = {'hexagonal','Hexagonal'}
 --example_list[6] = {'level','Minigame'}
 
