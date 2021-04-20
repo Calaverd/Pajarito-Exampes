@@ -1,9 +1,10 @@
 local example_list = {}
-example_list[1] = {'graphical_main','Pajarito main.lua'}
-example_list[2] = {'elemental','Elemental'}
-example_list[3] = {'weights','Using Weights'}
-example_list[4] = {'path_in_range','Path In Range'}
-example_list[5] = {'pathfinder','Standar Pathfinder'}
+table.insert(example_list, {'graphical_main','Pajarito main.lua'})
+table.insert(example_list, {'elemental','Elemental'})
+table.insert(example_list, {'elemental_walls','Basic Walls'})
+table.insert(example_list, {'weights','Using Weights'})
+table.insert(example_list, {'path_in_range','Path In Range'})
+table.insert(example_list, {'pathfinder','Standar Pathfinder'})
 --example_list[5] = {'hexagonal','Hexagonal'}
 --example_list[6] = {'level','Minigame'}
 
