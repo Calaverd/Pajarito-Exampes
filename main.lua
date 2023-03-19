@@ -1,15 +1,13 @@
---[[
-if you are interesed onnly the use of the Pajarito Pathfinder, 
-ignore this file and jump directly to the code on the examples folder.
---]]
+-- If you are interesed only on the use of the Pajarito Pathfinder,
+-- ignore this file and jump directly to the code on the examples folder.
+
 io.stdout:setvbuf("no")
---[[
-mini_core.lua contains:
-   a simple vector implementation (vector2D)
-   a camera (Camera) that, ironic, uses tween 
-   a chronometer (Chrono)
-   a funtion to split a image to form quads (makeQuads)
---]]
+
+-- mini_core.lua contains:
+--    a simple vector implementation (vector2D)
+--    a camera (Camera) that, ironically uses tween
+--    a chronometer (Chrono)
+--    a funtion to split a image to form quads (makeQuads)
 love.filesystem.load("libs/mini_core.lua")()
 
 -- escena.lua is just a handler of scenes  
