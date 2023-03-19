@@ -1,17 +1,8 @@
+--[[
+    Setup for drawing
+]]
+
 --we define some variables
---A small map to be used
-tile_map = { { 1, 3, 2, 3, 1, 1, 1 }, 
-             { 1, 3, 2, 2, 2, 1, 1 }, 
-             { 2, 1, 1, 2, 2, 1, 1 }, 
-             { 1, 2, 3, 1, 1, 3, 3 }, 
-             { 1, 2, 2, 2, 1, 3, 2 },
-             { 1, 1, 1, 3, 3, 3, 2 },
-             { 1, 1, 2, 2, 2, 3, 2 } }
-
---size of the map
-local tile_map_width = #tile_map[1]
-local tile_map_height= #tile_map
-
 --to store the converted form screen mouse position to tile map cords
 local m_ix = 0
 local m_iy = 0
@@ -34,7 +25,7 @@ local tileset_list = nil
 local range_slider = nil
 
 --we added a draw/edit mode
-local draw_mode = false 
+local draw_mode = false
 local tile_to_draw = 1
 
 --and also, a chronometer 
@@ -45,14 +36,22 @@ local timer = Chrono()
 ]]
 
 --First, we load the Pathfinder
-local pajarito = require("pajarito")
+local Pajarito = require("pajarito")
+
+--A small map to be used
+local tile_map = {
+    { 1, 3, 2, 3, 1, 1, 1 },
+    { 1, 3, 2, 2, 2, 1, 1 },
+    { 2, 1, 1, 2, 2, 1, 1 },
+    { 1, 2, 3, 1, 1, 3, 3 },
+    { 1, 2, 2, 2, 1, 3, 2 },
+    { 1, 1, 1, 3, 3, 3, 2 },
+    { 1, 1, 2, 2, 2, 3, 2 }
+}
 
 --Init the pathfinder using the tilemap and their dimensions
-pajarito.init(tile_map, tile_map_width, tile_map_height)
-
---we create a variable to store the path
-
-local generated_path = {}
+local map_graph = Pajarito.Graph:new{ type= '2D', map= tile_map}
+map_graph:build()
 
 --now, we define a table of weights and the default weights cost
 --note, values equal or less than 0, are considered impassable terrain
@@ -67,18 +66,11 @@ table_of_weights[9] = 0  --lava     tile 9 -> 0
 table_of_weights[10] = 0 --water   tile 10 -> 0
 
 --set the table to the tilemap
-pajarito.setWeigthTable(table_of_weights)
---[[
-You can change the values on the table directly and because the table is referenced,
-you do not have the need to resend the table.
-]]
-
---we clear all the previously marked nodes
---pajarito.clearNodeInfo() 
---because is the first run, is not necessary
+map_graph:setWeightMap(table_of_weights);
 
 --Generate a range of nodes stating at the given point
-pajarito.buildRange(saved_x,saved_y,15) 
+local node_range = map_graph:constructNodeRange({saved_x,saved_y}, 15)
+local generated_path = Pajarito.NodePath:new(0,{0,0}) -- An empty path
 
 --[[
     There are two ways to access to the marked/border nodes.
@@ -90,53 +82,56 @@ pajarito.buildRange(saved_x,saved_y,15)
 --]]
 
 --print the values or "deep of range" of the nodes
-function printNodeValues()
-    local t = pajarito.getInRangeNodes() --here we ask
-    
-    for _,node in pairs(t) do
+local function printNodeValues()
+    local nodes_in_range = node_range:getAllNodes() --here we ask
+    for i,node in ipairs(nodes_in_range) do
+        local x,y = node.position[1], node.position[2]
+        local movement_cost = tostring(node_range:getReachCostAt(node.id))
         love.graphics.setColor(0,0,0,1)
-        love.graphics.print(node.d, node.x*17+1, node.y*17+1)
+        love.graphics.print(movement_cost, x*17+1, y*17+1)
         love.graphics.setColor(1,1,1,1)
-        love.graphics.print(node.d, node.x*17, node.y*17)
+        love.graphics.print(movement_cost, x*17, y*17)
     end
-    
+
     if show_border then
-        t = pajarito.getBorderNodes() 
-        for _,node in pairs(t) do
-            love.graphics.print(node.d, node.x*17, node.y*17)
+        local nodes_in_border = node_range:getAllBoderNodes()
+        for _,node in ipairs(nodes_in_border) do
+            local x,y = node.position[1], node.position[2]
+            local cost = node_range:getBorderWeight(node.id)
+            love.graphics.print(cost, x*17, y*17)
         end
     end
 
 end
 
 --add the tiles of the map to a spritebath to draw it. 
-function updateTileSet()
+local function updateTileSet()
     tileset:clear()
-        
+
     local y = 1
     while tile_map[y] do
         local x = 1
         while tile_map[y][x] do
-            tile = tile_map[y][x]
+            local tile = tile_map[y][x]
             --a tile is added to the be draw... 
             tileset:add(tileset_list[tile],x*17,y*17)
-            
+
             -- Here we ask if on that position exist a node marked
             -- Fear not nested loops!, there is no one in "isNodeMarked"
-            
-            if pajarito.isPointInRange(x,y) then
+
+            if node_range:hasPoint({x,y}) then
                 --the next tile will be a "dark blue tone"
                 tileset:setColor(0,0.1,1) 
                 --is added a semitransparent tile over this one. 
                 tileset:add(tileset_list[29],x*17,y*17)
             end
-            
+
             --mark the border in a red hue
-            if show_border and pajarito.isPointInRangeBorder(x,y) then 
+            if show_border and node_range:borderHasPoint({x,y}) then
                 tileset:setColor(1,0,0,1)
                 tileset:add(tileset_list[29],x*17,y*17)
             end
-            
+
             tileset:setColor(1,1,1,1)
             x=x+1
         end
@@ -145,67 +140,65 @@ function updateTileSet()
 end
 
 --this is the function called every time the slider of "Range" changes.
-function updateRange(x,y,range)
-    pajarito.buildRange(x,y,range) --we do a new range stating on pos x,y
+local function updateRange(x,y,range)
+    node_range = map_graph:constructNodeRange({x,y}, range ) --we do a new range stating on pos x,y
     updateTileSet()
 end
 
 --This is the function called each time you click on the map.
-function saveNewStartPos()
-    if pajarito.isNodeOnGrid(m_ix,m_iy) then 
-        updateRange(m_ix,m_iy,range_slider:GetValue())
+local function saveNewStartPos()
+    if map_graph:hasPoint({m_ix,m_iy}) then
+        updateRange(m_ix, m_iy, range_slider:GetValue())
         saved_x = m_ix
         saved_y = m_iy
     end
 end
 
 --This function, is called to allow the diagonal movement
-function setDiagonal(diagonal)
-    if pajarito.getDiagonal() ~= diagonal then
-        pajarito.useDiagonal(diagonal)
+local function setDiagonal(diagonal)
+    --[[ TODO
+    if Pajarito.getDiagonal() ~= diagonal then
+        Pajarito.useDiagonal(diagonal)
         updateRange(saved_x,saved_y,range_slider:GetValue())
     end
+    --]]
 end
 
 --We request a new path every 0.15
-function updatePath(x,y)
+local function updatePath(x,y)
     
     --if timer has passed already 0.15 seconds
     if timer.hanPasado(0.15) then
-    --[[
-    Get path inside range, assume exist already a 
-    range of nodes. Then ask if the requested destination 
-    point is in that list. returns a table listing nodes
-    from the starting point and ends on the destination
-    --]]
-      if pajarito.buildInRangePathTo(x,y) then
-          generated_path = pajarito.getFoundPath()
-      end
+        --[[
+        Get path inside range, assume exist already a 
+        range of nodes. Then ask if the requested destination 
+        point is in that list. returns a table listing nodes
+        from the starting point and ends on the destination
+        --]]
+        generated_path = node_range:getPathTo({x,y})
     end
 end
 
 local tileset_image = nil
 
-function printPath()
+local function printPath()
     local i = 1
-    while generated_path[i] do
-        local node = generated_path[i]
-        
+    for steep,node in generated_path:getNodes() do
+        local x, y = node.position[1], node.position[2]
         love.graphics.setColor(0.7,0.7,0.7,0.5)
-        love.graphics.draw(tileset_image,tileset_list[14],node.x*17,node.y*17)
-        
-        local str = '('..tostring(node.x)..','..tostring(node.y)..')'
+        love.graphics.draw(tileset_image,tileset_list[14], x*17, y*17)
+
+        local str = '('..tostring(x)..','..tostring(y)..')'
         love.graphics.print(str,542,20*i-80)
-        
+
         --this part draws a line between the center of this node an the next
         love.graphics.setColor(1,0.2,1)
-        if generated_path[i+1] then
-            local next_node = generated_path[i+1]
-            love.graphics.line((node.x+0.5)*17,(node.y+0.5)*17,
-                                (next_node.x+0.5)*17,(next_node.y+0.5)*17)
+        local next_node = generated_path:getNodeAtSteep(steep+1)
+        if next_node then
+            local nx, ny = next_node.position[1], next_node.position[2]
+            love.graphics.line((x+0.5)*17, (y+0.5)*17,
+                                (nx+0.5)*17, (ny+0.5)*17)
         end
-        
-        i=i+1
     end
 end
 
@@ -220,6 +213,9 @@ local pres_m = vector2D(0,0)
 local relas_m = vector2D(0,0)
 
 local is_mouse_pressed = false
+
+local tile_map_width = #tile_map[1]
+local tile_map_height= #tile_map
 
 --a camera is created and placed on the center of the map
 local cam = Camera(
@@ -290,7 +286,7 @@ button:SetPos(40,90)
 button:SetText("Go back to main menu")
 button.OnClick = function(object, x, y)
     loveframes.RemoveAll()
-    pajarito.clearNodeInfo()
+    Pajarito.clearNodeInfo()
     SCENA_MANAGER.pop()
 end
 
@@ -499,7 +495,7 @@ function Main()
             if d > 8 then
                 local a = (relas_m-pres_m)
                 --cam.drag(a.x,a.y)
-                if draw_mode and draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -515,7 +511,7 @@ function Main()
                 relas_m.x = x
                 relas_m.y = y
                 is_mouse_pressed = true
-                if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) then
+                if draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) then
                     tile_map[m_iy][m_ix] = tile_to_draw
                 end
             end
@@ -535,7 +531,7 @@ function Main()
                     end
                 end
             end
-            if draw_mode and pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
+            if draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
                 tile_map[m_iy][m_ix] = tile_to_draw
                 updateRange(saved_x,saved_y,range_slider:GetValue())
             end
