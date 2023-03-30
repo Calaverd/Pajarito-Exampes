@@ -68,10 +68,8 @@ SCENA_MANAGER = EscenaManager()
 
 function love.load()
     --we start here chronometers
-    --"iniciar" is spanish for "start" 
-    --Why is on spanish? 
-    GARBAGE_TIMER.iniciar()
-    DRAW_TIMER.iniciar()
+    GARBAGE_TIMER.start()
+    DRAW_TIMER.start()
     
     --we set the canvas size to be a quarter of the size of the window
     CANVAS = love.graphics.newCanvas(640,360)
@@ -113,6 +111,13 @@ function love.update(dt)
     end
 end
 
+
+--check if the mouse is over a element of the gui.
+function mouseOnGUI(gui_obj)
+    local x, y = love.mouse.getPosition()
+    return (x >= gui_obj.x and  (x < (gui_obj.x+gui_obj.width)))
+    and (y >= gui_obj.y and (y < (gui_obj.y+gui_obj.height)))
+end
 
 function love.draw()
     

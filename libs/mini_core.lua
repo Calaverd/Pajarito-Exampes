@@ -157,7 +157,7 @@ function Chrono()
         return iniciado
     end
     
-    function self.iniciar()
+    function self.start()
         iniciado = true
         pausado = false
         detenido = false
@@ -178,13 +178,13 @@ function Chrono()
     
     function self.getDeltaTimeFrame(max_fps)
         local time = self.getDeltaTime()
-        self.iniciar()
+        self.start()
         return time
     end
     
     function self.hanPasado(segundos)
         if self.getDeltaTime() >=  segundos then
-            self.iniciar()
+            self.start()
             return true
         end
         return false

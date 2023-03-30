@@ -433,7 +433,7 @@ function mouseOnGUI(gui_obj)
 end
 
 --we start the timer
-timer.iniciar()
+timer.start()
 
 function Main()
     local self = Escena()
