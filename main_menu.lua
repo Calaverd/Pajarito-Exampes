@@ -1,4 +1,5 @@
 local example_list = {}
+table.insert(example_list, {'no_boilerplate','No Boilerplate'})
 table.insert(example_list, {'graphical_main','Pajarito main.lua'})
 table.insert(example_list, {'elemental','Elemental'})
 table.insert(example_list, {'elemental_walls','Basic Walls'})
@@ -31,7 +32,9 @@ local function createGUI()
         button:SetText(name)
 		button.OnClick = function()
             loveframes.RemoveAll()
-            SCENA_MANAGER.push(love.filesystem.load("examples/"..url..".lua")())
+            local new_scene = love.filesystem.load("examples/"..url..".lua")()
+            new_scene.build()
+            SCENA_MANAGER.push(new_scene)
             --object:SetText("You clicked the button!")
         end
 

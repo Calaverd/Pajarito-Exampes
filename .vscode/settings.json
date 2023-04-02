@@ -5,5 +5,12 @@
     ],
     "Lua.diagnostics.disable": [
         "duplicate-set-field"
+    ],
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.runtime.special": {
+        "love.filesystem.load": "loadfile"
+    },
+    "Lua.workspace.library": [
+        "${3rd}/love2d/library"
     ]
 }

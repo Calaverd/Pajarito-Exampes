@@ -8,37 +8,38 @@ function Main()
 
     --tileset_list contains the quads used to draw the map
     local tileset_list = makeQuads(320,320,16,16)
-    
-    self.title = 'Pajarito Example'
-    self.timer = Chrono()
 
-    --we define some variables
     --to store the converted form screen mouse position to tile map cords
     self.m_ix = 0
     self.m_iy = 0
 
-    --variables used to store the pos once a mouse click on map happened
-    --we init they on the middle of the tile map
-    self.saved_x = 4 --math.floor(tile_map_width/2)
-    self.saved_y = 4 --math.floor(tile_map_height/2)
+    self.tile_map_width = 0
+    self.tile_map_height = 0
 
-    --a value to see if the border should be show
-    self.show_border = true
+    --- X position of the start point for the range
+    self.start_x = 0
+    --- Y position of the start point for the range
+    self.start_y = 0
 
-    --tileset contains the spritebatch we will create from a source image
-    self.tileset = nil
+    self.gui_slider_range = nil
 
-    --tileset_list, a list of the quads used to draw the map
-    self.tileset_list = nil
+    function self.getTileset()
+        return tileset
+    end
 
-    --a slider to set the range
-    self.range_slider = nil
+    function self.getListOfTiles()
+        return tileset_list
+    end
 
-    --we added a draw/edit mode
-    self.draw_mode = false
-    self.tile_to_draw = 1
+    function self.updateTilesToDraw()
+    end
 
-    -- GUI variables
+    --- Get the coordinates in the tilemap were
+    --- the mouse is
+    ---@return table
+    function self.getMouseTile()
+        return {self.m_ix, self.m_iy}
+    end
 
     function self.drawRange(show_numbers)
         
@@ -52,62 +53,70 @@ function Main()
         
     end
 
-
-    function self.setup()
-        
-    end
-
+    --- Were WE do configure this before the first run.
     function self.build()
         love.window.setTitle(self.title)
-        --we start the timer
-        self.timer.start()
+
+            --a camera is created and placed on the center of the map
+        self.camera = Camera(
+            -(320)+((self.tile_map_width/2+1)*17),
+            -(180)+(self.tile_map_height*8))
+
+        self.updateTilesToDraw()
     end
 
-    updateTileSet()
-    updatePath(1,1)
 
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
         love.graphics.setColor(1,1,1)
 
         love.graphics.push()
-        love.graphics.translate(math.floor(-self.cam.getPosX()),math.floor(-self.cam.getPosY()))
+            love.graphics.translate(
+                math.floor(-self.camera.getPosX()),
+                math.floor(-self.camera.getPosY())
+            )
 
-        local x, y = getMouseOnCanvas()
-        x,y = love.graphics.inverseTransformPoint(x,y)
+            local x, y = getMouseOnCanvas()
+            x,y = love.graphics.inverseTransformPoint(x,y)
 
-        if not mouseOnGUI(self.container) then
-            self.m_ix = math.floor(x/17)
-            self.m_iy = math.floor(y/17)
+            --[[
+            if not mouseOnGUI(self.container) then
+                self.m_ix = math.floor(x/17)
+                self.m_iy = math.floor(y/17)
+            end
+            --]]
 
-        end
+            love.graphics.draw(tileset) -- draw the map
 
-        love.graphics.draw(tileset)
-        love.graphics.draw(tileset_image,tileset_list[13],self.m_ix*17,self.m_iy*17)
+            -- draw the cursor
+            love.graphics.draw(tileset_image,tileset_list[13],self.m_ix*17,self.m_iy*17)
 
-        printPath()
+            self.drawRange( --[[ self.checkbox1:GetChecked() ]] )
+            self.drawBorder( --[[ self.checkbox1:GetChecked() ]] )
+            self.drawPath( --[[ show connected ]])
 
-        if self.checkbox1:GetChecked() then
-            printNodeValues()
-        end
 
-        love.graphics.setColor(1,1,1)
 
+            love.graphics.setColor(1,1,1)
         love.graphics.pop()
+        love.graphics.print('Hola mundo!')
     end
 
     function self.update(dt)
-        self.cam.update(dt)
-        --if you ask, loveframes is updated on the main.
-        if self.show_border ~= self.checkbox2:GetChecked() then
-            self.show_border = self.checkbox2:GetChecked()
-            updateTileSet()
-        end
-        setDiagonal(self.checkbox3:GetChecked())
-        updatePath(self.m_ix,self.m_iy)
+        --[[
+            self.cam.update(dt)
+            --if you ask, loveframes is updated on the main.
+            if self.show_border ~= self.checkbox2:GetChecked() then
+                self.show_border = self.checkbox2:GetChecked()
+                updateTileSet()
+            end
+            setDiagonal(self.checkbox3:GetChecked())
+            updatePath(self.m_ix,self.m_iy)
+        ]]
     end
 
     function self.mousemoved(x, y, dx, dy, istouch)
+        --[[
         if is_mouse_pressed and not mouseOnGUI(container) then
             local x, y = getMouseOnCanvas()
             self.relas_m.x = x
@@ -121,9 +130,11 @@ function Main()
                 end
             end
         end
+        --]]
     end
 
     function self.mousepressed(x, y, button)
+        --[[
         if button == 1 then
             if not is_mouse_pressed and not mouseOnGUI(container) then
                 local x, y = getMouseOnCanvas()
@@ -137,27 +148,30 @@ function Main()
                 end
             end
         end
+        --]]
     end
 
     function self.mousereleased(x, y, button)
-        if button == 1 then
-            local d = (relas_m-pres_m).magnitud()
-            if d > 16 then
-                local a = (relas_m-pres_m)
-                --cam.drop(a.x,a.y)
-            else
-                if not mouseOnGUI(container) then
-                    if not draw_mode then
-                        saveNewStartPos()
+        --[[
+            if button == 1 then
+                local d = (relas_m-pres_m).magnitud()
+                if d > 16 then
+                    local a = (relas_m-pres_m)
+                    --cam.drop(a.x,a.y)
+                else
+                    if not mouseOnGUI(container) then
+                        if not draw_mode then
+                            saveNewStartPos()
+                        end
                     end
                 end
+                if draw_mode and Pajarito.isNodeOnGrid(self.m_ix,self.m_iy) and not mouseOnGUI(container) then
+                    tile_map[self.m_iy][self.m_ix] = tile_to_draw
+                    updateRange(saved_x,saved_y,range_slider:GetValue())
+                end
+                is_mouse_pressed = false
             end
-            if draw_mode and Pajarito.isNodeOnGrid(self.m_ix,self.m_iy) and not mouseOnGUI(container) then
-                tile_map[self.m_iy][self.m_ix] = tile_to_draw
-                updateRange(saved_x,saved_y,range_slider:GetValue())
-            end
-            is_mouse_pressed = false
-        end
+        ]]
     end
 
     return self
