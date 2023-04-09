@@ -26,20 +26,23 @@ local function Main()
     -- Call it once before starting to use the methods of the graph object.
     self.map_graph:build()
 
+    -- Creates an special kind of object that contains all nodes
+    -- with in the given reach from within the given node position
     self.node_range = self.map_graph:constructNodeRange({1,1},10)
     self.gui.setRangeSliderValue(10)
 
+    -- We define a set of weights or traversal cost
+    -- for the posible tiles on the map
     self.table_of_weights = {}
     self.table_of_weights[1] = 1  --grass    tile 1 -> 1
     self.table_of_weights[2] = 3  --sand     tile 2 -> 2
     self.table_of_weights[3] = 0  --mountain tile 3 -> 0
     self.table_of_weights[4] = 2  --woods    tile 4 -> 2
-    self.table_of_weights[5] = 0  --walls    tile 5 -> 0
-    self.table_of_weights[8] = 1  --dirt     tile 8 -> 1
-    self.table_of_weights[9] = 0  --lava     tile 9 -> 0
-    self.table_of_weights[10] = 0 --water   tile 10 -> 0
-
-    --set the table to the tilemap
+    self.table_of_weights[5] = 0  --piramid  tile 5 -> 0
+    self.table_of_weights[6] = 1  --dirt     tile 8 -> 1
+    self.table_of_weights[7] = 0  --lava     tile 9 -> 0
+    self.table_of_weights[8] = 0 --water   tile 10 -> 0
+    -- Inform to the graph to take the weights into acount
     self.map_graph:setWeightMap(self.table_of_weights);
 
     -- This method used to update the tiles to draw
@@ -49,8 +52,8 @@ local function Main()
     function self.updateTilesToDraw()
         local tileset = self.getTileset()
         local list_of_tiles = self.getListOfTiles()
-        local tile_for_range = list_of_tiles[29]
-        local tile_for_border = list_of_tiles[29]
+        local tile_for_range = list_of_tiles[13]
+        local tile_for_border = list_of_tiles[14]
 
         tileset:clear()
         for y=1, self.tile_map_height do
@@ -69,7 +72,7 @@ local function Main()
                     tileset:add(tile_for_range, x*17, y*17)
                 end
 
-                if self.show_border
+                if self.gui.canShowRangeBorder()
                     and self.node_range:borderHasPoint({x,y}) then
                     tileset:add(tile_for_border, x*17, y*17)
                 end
@@ -79,8 +82,27 @@ local function Main()
         end
     end
 
+    function self.drawNodeRangeValues()
+        local nodes_in_range = self.node_range:getAllNodes() --here we ask
+        for _,node in ipairs(nodes_in_range) do
+            local x,y = node.position[1], node.position[2]
+            local movement_cost = tostring(self.node_range:getReachCostAt(node.id))
+            self.drawCost(x*17,y*17,movement_cost)
+        end
+
+        if self.show_border then
+            local nodes_in_border = self.node_range:getAllBoderNodes()
+            for _,node in ipairs(nodes_in_border) do
+                local x,y = node.position[1], node.position[2]
+                local cost = self.node_range:getBorderWeight(node.id)
+                love.graphics.print(tostring(cost), x*17, y*17)
+            end
+        end
+    end
+
+    --- Changes the tile value of the given point in
+    -- the graph and on the tile map.
     function self.updateMapTile(x,y,new_value)
-        print('X '..x..','..' Y '..y..' draw tile: '..new_value)
         if self.map_graph and self.map_graph:hasPoint({x,y}) then
             -- We use this table to draw the map
             -- so we have to update it

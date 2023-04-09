@@ -243,6 +243,14 @@ function GUIBuilder(tileset_image, tileset_list)
         saved_y = y
     end
 
+    function self.canShowRangeValues()
+        return checkbox_range_numbers:GetChecked()
+    end
+
+    function self.canShowRangeBorder()
+        return checkbox_show_border:GetChecked()
+    end
+
     rebuild()
     return self
 end
@@ -251,20 +259,25 @@ end
 function Main()
     local self = Escena()
     --load a tileset image
-    local tileset_image = love.graphics.newImage('tileset.png')
+    local tileset_image = love.graphics.newImage('/rsc/tileset.png')
 
     --tileset contains the spritebatch we create from the source image
     local tileset = love.graphics.newSpriteBatch(tileset_image,2000)
 
     --tileset_list contains the quads used to draw the map
-    local tileset_list = makeQuads(320,320,16,16)
+    local tileset_list = makeQuads(64,64,16,16)
+
+    local defaultFont = love.graphics.getFont()
+    local pixelFont = love.graphics.newFont( '/rsc/pixel_fonts/PXSansBold.ttf', 17)
 
     local pres_m = vector2D(0,0)
     local relas_m = vector2D(0,0)
 
-    function self.updateMapTile(x,y,new_tile)
-        
-    end
+    function self.updateMapTile(x,y,new_tile) end
+
+    function self.updateTilesToDraw() end
+
+    function self.drawNodeRangeValues() end
 
     --this is the function called every time the slider of "Range" changes.
     function self.updateRange(x,y,range)
@@ -278,6 +291,7 @@ function Main()
     self.tile_map_height = 0
 
     self.gui = GUIBuilder(tileset_image, tileset_list);
+    local stored_value_show_border = self.gui.canShowRangeBorder()
 
     function self.getTileset()
         return tileset
@@ -306,6 +320,19 @@ function Main()
         self.updateTilesToDraw()
     end
 
+    function self.drawCost(x,y,cost)
+        cost = tostring(cost)
+        local padding = 0
+        if #cost == 1 then
+            padding = 4
+        end
+        x = x + padding
+        love.graphics.setColor(0.2,0.1,0.0,0.8)
+        love.graphics.print(cost, x+1, y+1)
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.print(cost, x, y)
+    end
+
 
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
@@ -327,6 +354,13 @@ function Main()
 
             love.graphics.draw(tileset) -- draw the map
 
+            if self.gui.canShowRangeValues() then
+                love.graphics.setColor(1,1,1,1)
+                love.graphics.setFont(pixelFont)
+                self.drawNodeRangeValues()
+                love.graphics.setFont(defaultFont)
+            end
+
             -- draw the cursor
             love.graphics.draw(tileset_image,tileset_list[13],self.m_ix*17,self.m_iy*17)
 
@@ -336,6 +370,10 @@ function Main()
     end
 
     function self.update(dt)
+        if stored_value_show_border ~= self.gui.canShowRangeBorder() then
+            stored_value_show_border = self.gui.canShowRangeBorder()
+            self.updateTilesToDraw()
+        end
         --[[
             self.cam.update(dt)
             --if you ask, loveframes is updated on the main.
@@ -397,6 +435,7 @@ function Main()
             if self.gui.is_on_draw_mode then
                 self.updateMapTile(self.m_ix, self.m_iy, tile)
             else
+                self.gui.setRangePosition(self.m_ix, self.m_iy)
                 self.updateRange(self.m_ix, self.m_iy, self.gui.getRangeSliderValue())
             end
         end
