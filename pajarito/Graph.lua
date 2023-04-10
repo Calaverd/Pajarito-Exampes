@@ -380,7 +380,7 @@ function Graph:constructNodeRange(start, max_cost, type_movement, collition_grou
                 then
                 if is_way_posible and
                     is_not_bloked_by_object and
-                    not (max_cost <= accumulated_weight)  then -- is not beyond range
+                    not (max_cost < accumulated_weight)  then -- is not beyond range
                     nodes_in_queue[node_id] = accumulated_weight
                     --- We save to the queue the node and their acumulated weight
                     node_queue:push({node, accumulated_weight})

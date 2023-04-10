@@ -92,7 +92,6 @@ function NodeRange:getBorderWeight(id)
     return self.border[id]
 end
 
-
 --- Makes use of the method getNode from the
 --- graph that creates the node range so it
 --- can return the node
@@ -102,8 +101,30 @@ function NodeRange:getNode(node_id)
     return self.graphGetNode(node_id)
 end
 
+--- Gets the initial node from where this
+--- range started
+---@return Node|nil
 function NodeRange:getStartNode()
     return self.graphGetNode(self.start_id)
+end
+
+--- Is this Range is not empty, returns the staring
+--- node position.
+---@return number[]|nil position
+function NodeRange:getStartNodePosition()
+    local node = self.graphGetNode(self.start_id)
+    if node then
+        return node.position
+    end
+    return nil
+end
+
+--- Check if a given array for position is equal
+--- to the position of the start node.
+---@param position number[]
+---@return boolean
+function NodeRange:isStartNodePosition(position)
+    return (self.start_id == self:getIdFromPoint(position))
 end
 
 --- Returns a list of all the nodes in the range
@@ -120,7 +141,7 @@ end
 ---@return table<number,Node>
 function NodeRange:getAllBoderNodes()
     local nodes = {}
-    for _,node_id in pairs(self.border) do
+    for node_id,_ in pairs(self.border) do
         nodes[#nodes+1] = self:getNode(node_id)
     end
     return nodes
