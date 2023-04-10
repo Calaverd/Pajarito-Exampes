@@ -1,5 +1,4 @@
 local example_list = {}
-table.insert(example_list, {'no_boilerplate','No Boilerplate'})
 table.insert(example_list, {'graphical_main','Pajarito main.lua'})
 table.insert(example_list, {'elemental','Elemental'})
 table.insert(example_list, {'elemental_walls','Basic Walls'})

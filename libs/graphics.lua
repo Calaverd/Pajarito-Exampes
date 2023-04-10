@@ -24,9 +24,12 @@ function GUIBuilder(tileset_image, tileset_list)
     local button_toggle_drawmode = nil
     local range_slider_text = nil
     local range_slider = nil
-    local sliderCallback = function () end
-    local checkbox_range_numbers = nil
+    local sliderCallback = function (x,y,r) end
     local checkbox_show_border = nil
+    local checkbox_show_range = nil
+    local checkbox_show_range_value = true;
+    local checkbox_range_numbers = nil
+    local checkbox_border_numbers = nil
     local checkbox_toggle_diagonal = nil
     local sub_container = nil
     local rebuild = function ()  end
@@ -145,9 +148,9 @@ function GUIBuilder(tileset_image, tileset_list)
         end
 
         description_text = loveframes.Create('text', root_panel)
-        description_text:SetPos(20,5)
-        description_text:SetWidth(220)
-        description_text:SetShadowColor(.8, .8, .8, 1)
+        description_text:SetPos(10,7)
+        description_text:SetWidth(250)
+        description_text:SetShadowColor(.8, .8, .8, 0.8)
         description_text:SetShadow(true)
         description_text:SetText(self.str_description_text)
 
@@ -161,17 +164,17 @@ function GUIBuilder(tileset_image, tileset_list)
         end
 
         range_slider_text = loveframes.Create('text', root_panel)
-        range_slider_text:SetPos(310,15)
+        range_slider_text:SetPos(280,15)
         range_slider_text:SetWidth(280)
         range_slider_text:SetText('Range '..tostring(stored_range))
         range_slider_text.Update = function(object, dt)
             stored_range = range_slider:GetValue()
             object:SetText('Range '..tostring(stored_range))
         end
-        
+
         range_slider = loveframes.Create("slider", root_panel)
-        range_slider:SetPos(370,13)
-        range_slider:SetWidth(200)
+        range_slider:SetPos(340,13)
+        range_slider:SetWidth(225)
         range_slider:SetMinMax(2,15)
         range_slider:SetValue(stored_range)
         range_slider:SetDecimals(0)
@@ -180,17 +183,30 @@ function GUIBuilder(tileset_image, tileset_list)
             sliderCallback(saved_x,saved_y,object:GetValue())
         end
 
-        checkbox_range_numbers = loveframes.Create("checkbox", root_panel)
-        checkbox_range_numbers:SetText("Show 'Deep of Range' numbers")
-        checkbox_range_numbers:SetPos(310, 40)
-    
+        checkbox_show_range = loveframes.Create("checkbox", root_panel)
+        checkbox_show_range:SetText("Mark Range Nodes")
+        checkbox_show_range:SetPos(280, 40)
+        checkbox_show_range:SetChecked(checkbox_show_range_value)
+        checkbox_show_range.onChange = function ()
+            checkbox_show_range_value = not checkbox_show_range_value
+        end
+
         checkbox_show_border = loveframes.Create("checkbox", root_panel)
-        checkbox_show_border:SetText("Show border outside range")
-        checkbox_show_border:SetPos(310, 65)
-    
+        checkbox_show_border:SetText("Mark Border Nodes")
+        checkbox_show_border:SetPos(430, 40)
+
+        -- Same line
+        checkbox_range_numbers = loveframes.Create("checkbox", root_panel)
+        checkbox_range_numbers:SetText("Show Range Cost")
+        checkbox_range_numbers:SetPos(280, 65)
+
+        checkbox_border_numbers = loveframes.Create("checkbox", root_panel)
+        checkbox_border_numbers:SetText("Show Border Cost")
+        checkbox_border_numbers:SetPos(430, 65)
+
         checkbox_toggle_diagonal = loveframes.Create("checkbox", root_panel)
         checkbox_toggle_diagonal:SetText("Diagonal movement")
-        checkbox_toggle_diagonal:SetPos(310, 90)
+        checkbox_toggle_diagonal:SetPos(280, 90)
 
         sub_container = loveframes.Create("panel",root_panel)
         if self.is_on_draw_mode then
@@ -243,12 +259,24 @@ function GUIBuilder(tileset_image, tileset_list)
         saved_y = y
     end
 
+    function self.canShowRangeNodes()
+        return checkbox_show_range:GetChecked()
+    end
+
     function self.canShowRangeValues()
         return checkbox_range_numbers:GetChecked()
     end
 
+    function self.canShowBorderValues()
+        return checkbox_border_numbers:GetChecked()
+    end
+
     function self.canShowRangeBorder()
         return checkbox_show_border:GetChecked()
+    end
+
+    function self.canGoDiagonal()
+        return checkbox_toggle_diagonal:GetChecked()
     end
 
     rebuild()
@@ -270,28 +298,36 @@ function Main()
     local defaultFont = love.graphics.getFont()
     local pixelFont = love.graphics.newFont( '/rsc/pixel_fonts/PXSansBold.ttf', 17)
 
-    local pres_m = vector2D(0,0)
-    local relas_m = vector2D(0,0)
-
     function self.updateMapTile(x,y,new_tile) end
 
     function self.updateTilesToDraw() end
 
     function self.drawNodeRangeValues() end
+    function self.drawNodeBorderValues() end
+    function self.drawPath() end
+
+    function self.requestNewPath() end
 
     --this is the function called every time the slider of "Range" changes.
-    function self.updateRange(x,y,range)
-    end
+    function self.updateRange(x,y,range)  end
 
     --to store the converted form screen mouse position to tile map cords
     self.m_ix = 1
     self.m_iy = 1
+
+    local store_mouse_position_x = self.m_ix
+    local store_mouse_position_y = self.m_iy
+
+    self.map_graph = nil
+    self.node_range = nil
 
     self.tile_map_width = 0
     self.tile_map_height = 0
 
     self.gui = GUIBuilder(tileset_image, tileset_list);
     local stored_value_show_border = self.gui.canShowRangeBorder()
+    local stored_value_show_range = self.gui.canShowRangeNodes()
+    local stored_value_movement = self.gui.canGoDiagonal()
 
     function self.getTileset()
         return tileset
@@ -328,7 +364,10 @@ function Main()
         end
         x = x + padding
         love.graphics.setColor(0.2,0.1,0.0,0.8)
-        love.graphics.print(cost, x+1, y+1)
+        love.graphics.print(cost, x+1, y)
+        love.graphics.print(cost, x-1, y)
+        love.graphics.print(cost, x, y+1)
+        love.graphics.print(cost, x, y-1)
         love.graphics.setColor(1,1,1,1)
         love.graphics.print(cost, x, y)
     end
@@ -354,10 +393,17 @@ function Main()
 
             love.graphics.draw(tileset) -- draw the map
 
+            self.drawPath()
+
             if self.gui.canShowRangeValues() then
-                love.graphics.setColor(1,1,1,1)
                 love.graphics.setFont(pixelFont)
                 self.drawNodeRangeValues()
+                love.graphics.setFont(defaultFont)
+            end
+
+            if self.gui.canShowBorderValues() then
+                love.graphics.setFont(pixelFont)
+                self.drawNodeBorderValues()
                 love.graphics.setFont(defaultFont)
             end
 
@@ -374,69 +420,39 @@ function Main()
             stored_value_show_border = self.gui.canShowRangeBorder()
             self.updateTilesToDraw()
         end
-        --[[
-            self.cam.update(dt)
-            --if you ask, loveframes is updated on the main.
-            if self.show_border ~= self.checkbox2:GetChecked() then
-                self.show_border = self.checkbox2:GetChecked()
-                updateTileSet()
-            end
-            setDiagonal(self.checkbox3:GetChecked())
-            updatePath(self.m_ix,self.m_iy)
-        ]]
-    end
-
-    function self.mousemoved(x, y, dx, dy, istouch)
-        --[[
-        if is_mouse_pressed and not mouseOnGUI(container) then
-            local x, y = getMouseOnCanvas()
-            self.relas_m.x = x
-            self.relas_m.y = y
-            local d = (pres_m-relas_m).magnitud()
-            if d > 8 then
-                local a = (relas_m-pres_m)
-                --cam.drag(a.x,a.y)
-                if draw_mode and draw_mode and Pajarito.isNodeOnGrid(self.m_ix,self.m_iy) then
-                    tile_map[self.m_iy][self.m_ix] = tile_to_draw
-                end
+        if stored_value_show_range ~= self.gui.canShowRangeNodes() then
+            stored_value_show_range = self.gui.canShowRangeNodes()
+            self.updateTilesToDraw()
+        end
+        if stored_value_movement ~= self.gui.canGoDiagonal()
+            and self.node_range then
+            stored_value_movement = self.gui.canGoDiagonal()
+            -- Update the range with the new map info.
+            local position = self.node_range:getStartNodePosition()
+            local range = self.node_range.range
+            if position then
+                self.updateRange(position[1], position[2], range)
             end
         end
-        --]]
-    end
-
-    function self.mousepressed(x, y, button)
-        --[[
-        if button == 1 then
-            if not is_mouse_pressed and not mouseOnGUI(container) then
-                local x, y = getMouseOnCanvas()
-                pres_m.x = x
-                pres_m.y = y
-                relas_m.x = x
-                relas_m.y = y
-                is_mouse_pressed = true
-                if draw_mode and Pajarito.isNodeOnGrid(self.m_ix,self.m_iy) then
-                    tile_map[self.m_iy][self.m_ix] = tile_to_draw
-                end
-            end
+        local changePosition = (store_mouse_position_x ~= self.m_ix
+                or store_mouse_position_y ~= self.m_iy)
+        if changePosition and self.node_range then
+            self.requestNewPath()
+            store_mouse_position_x = self.m_ix
+            store_mouse_position_y = self.m_iy
         end
-        --]]
     end
 
     function self.mousereleased(x, y, button)
-        if button == 3 then
-            local d = (relas_m-pres_m).magnitud()
-            if d > 16 then
-                local a = (relas_m-pres_m)
-                self.camera.drop(a.x,a.y)
-            end
-        end
         if button == 1 and not self.gui.hasMosueOver() then
             local tile = self.gui.active_draw_tile
             if self.gui.is_on_draw_mode then
                 self.updateMapTile(self.m_ix, self.m_iy, tile)
             else
-                self.gui.setRangePosition(self.m_ix, self.m_iy)
-                self.updateRange(self.m_ix, self.m_iy, self.gui.getRangeSliderValue())
+                if self.map_graph:hasPoint({self.m_ix, self.m_iy}) then
+                    self.gui.setRangePosition(self.m_ix, self.m_iy)
+                    self.updateRange(self.m_ix, self.m_iy, self.gui.getRangeSliderValue())
+                end
             end
         end
     end

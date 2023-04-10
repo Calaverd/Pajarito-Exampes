@@ -1,545 +1,210 @@
---[[
-    Setup for drawing
-]]
-
---we define some variables
---to store the converted form screen mouse position to tile map cords
-local m_ix = 0
-local m_iy = 0
-
---variables used to store the pos once a mouse click on map happened
---we init they on the middle of the tile map
-local saved_x = 4 --math.floor(tile_map_width/2)
-local saved_y = 4 --math.floor(tile_map_height/2)
-
---a value to see if the border should be show
-local show_border = true
-
---tileset contains the spritebatch we will create from a source image
-local tileset = nil
-
---tileset_list, a list of the quads used to draw the map
-local tileset_list = nil
-
---a slider to set the range
-local range_slider = nil
-
---we added a draw/edit mode
-local draw_mode = false
-local tile_to_draw = 1
-
---and also, a chronometer 
-local timer = Chrono()
-
---[[ 
-    ***The code in one way or another related directly to Pajarito*** 
-]]
-
---First, we load the Pathfinder
 local Pajarito = require("pajarito")
+local GraphicsBase = require('libs/graphics')
 
---A small map to be used
-local tile_map = {
-    { 1, 3, 2, 3, 1, 1, 1 },
-    { 1, 3, 2, 2, 2, 1, 1 },
-    { 2, 1, 1, 2, 2, 1, 1 },
-    { 1, 2, 3, 1, 1, 3, 3 },
-    { 1, 2, 2, 2, 1, 3, 2 },
-    { 1, 1, 1, 3, 3, 3, 2 },
-    { 1, 1, 2, 2, 2, 3, 2 }
-}
+local function Main()
+    local self = GraphicsBase();
 
---Init the pathfinder using the tilemap and their dimensions
-local map_graph = Pajarito.Graph:new{ type= '2D', map= tile_map}
-map_graph:build()
+    self.title = 'Graphical Main'
+    self.gui.setDescriptionText(
+        'This is the example of paths in range.\n'..
+        'Click on any part of the map to mark a new starting point.\n'..
+        'Put the mouse inside the range to generate and draw a path.')
 
---now, we define a table of weights and the default weights cost
---note, values equal or less than 0, are considered impassable terrain
-local table_of_weights = {}
-table_of_weights[1] = 1  --grass    tile 1 -> 1
-table_of_weights[2] = 3  --sand     tile 2 -> 2
-table_of_weights[3] = 0  --mountain tile 3 -> 0  
-table_of_weights[4] = 2  --woods    tile 4 -> 2
-table_of_weights[5] = 0  --walls    tile 5 -> 0
-table_of_weights[8] = 1  --dirt     tile 8 -> 1
-table_of_weights[9] = 0  --lava     tile 9 -> 0
-table_of_weights[10] = 0 --water   tile 10 -> 0
+    self.tile_map = {
+        { 1, 3, 2, 3, 1, 1, 1 },
+        { 1, 3, 2, 2, 2, 1, 1 },
+        { 2, 1, 1, 2, 2, 1, 1 },
+        { 1, 2, 3, 1, 1, 3, 3 },
+        { 1, 2, 2, 2, 1, 3, 2 },
+        { 1, 1, 1, 3, 3, 3, 2 },
+        { 1, 1, 2, 2, 2, 3, 2 }
+    }
+    self.tile_map_width = #self.tile_map
+    self.tile_map_height = #self.tile_map[1]
 
---set the table to the tilemap
-map_graph:setWeightMap(table_of_weights);
+    self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map})
 
---Generate a range of nodes stating at the given point
-local node_range = map_graph:constructNodeRange({saved_x,saved_y}, 15)
-local generated_path = Pajarito.NodePath:new(0,{0,0}) -- An empty path
+    -- This initializes all the nodes and their conections in the graph.
+    -- This operation can be a little bit expensive depending on the map size
+    -- Call it once before starting to use the methods of the graph object.
+    self.map_graph:build()
 
---[[
-    There are two ways to access to the marked/border nodes.
-    
-    1) Ask to the lib for a list of the marked ones and iterate it.
-    2) In the loop used to draw the tile map, check in a one by one.
-   
-   The following functions are examples of that. 
---]]
+    -- Creates an special kind of object that contains all nodes
+    -- in the given reach from within the given node position
+    local max_allowed_cost = 15
+    local initial_x = 4
+    local initial_y = 4
+    self.node_range =
+        self.map_graph:constructNodeRange(
+            {initial_x, initial_y},
+            max_allowed_cost)
 
---print the values or "deep of range" of the nodes
-local function printNodeValues()
-    local nodes_in_range = node_range:getAllNodes() --here we ask
-    for i,node in ipairs(nodes_in_range) do
-        local x,y = node.position[1], node.position[2]
-        local movement_cost = tostring(node_range:getReachCostAt(node.id))
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.print(movement_cost, x*17+1, y*17+1)
-        love.graphics.setColor(1,1,1,1)
-        love.graphics.print(movement_cost, x*17, y*17)
+    -- We define a set of weights or traversal cost
+    -- for the posible tiles on the map
+    self.table_of_weights = {}
+    self.table_of_weights[1] = 1  --grass    tile 1 -> 1
+    self.table_of_weights[2] = 3  --sand     tile 2 -> 2
+    self.table_of_weights[3] = 0  --mountain tile 3 -> 0
+    self.table_of_weights[4] = 2  --woods    tile 4 -> 2
+    self.table_of_weights[5] = 0  --piramid  tile 5 -> 0
+    self.table_of_weights[6] = 1  --dirt     tile 8 -> 1
+    self.table_of_weights[7] = 0  --lava     tile 9 -> 0
+    self.table_of_weights[8] = 0 --water   tile 10 -> 0
+    -- Inform to the graph to take the weights into acount
+    self.map_graph:setWeightMap(self.table_of_weights)
+
+    self.generated_path = nil -- define this for a later use.
+
+    -- This method used to update the tiles to draw
+    -- and is called only once an update has been made.
+    -- Is left here because it shows how you can get
+    -- info from an specific point.
+    function self.updateTilesToDraw()
+        local tileset = self.getTileset()
+        local list_of_tiles = self.getListOfTiles()
+        local tile_for_range_start = list_of_tiles[12]
+        local tile_for_range = list_of_tiles[13]
+        local tile_for_border = list_of_tiles[14]
+        local tile_for_border_unpassable = list_of_tiles[15]
+
+        tileset:clear()
+        for y=1, self.tile_map_height do
+            for x=1, self.tile_map_width do
+                local map_tile = self.tile_map[y][x]
+                -- A tile is added to the be draw.
+                -- this is the map layer
+                tileset:add(list_of_tiles[map_tile],x*17,y*17)
+
+                -- Here we ask if on that position
+                -- the range has node of that kind
+                -- Fear not nested loops!
+                -- All "hasPoint" methods do checks in linear time.
+
+                if self.gui.canShowRangeNodes() then
+                    if self.node_range:hasPoint({x,y}) then
+                        if self.node_range:isStartNodePosition({x,y}) then
+                            tileset:add(tile_for_range_start, x*17, y*17)
+                        else
+                            tileset:add(tile_for_range, x*17, y*17)
+                        end
+                    end
+                end
+
+                if self.gui.canShowRangeBorder() then
+                    local node_id = self.node_range:borderHasPoint({x,y})
+                    if node_id then
+                        local cost = self.node_range:getBorderWeight(node_id --[[@as integer]])
+                        if cost == -1 then
+                            tileset:add(tile_for_border_unpassable, x*17, y*17)
+                        else
+                            tileset:add(tile_for_border, x*17, y*17)
+                        end
+                    end
+                end
+
+                tileset:setColor(1,1,1,1)
+            end
+        end
     end
 
-    if show_border then
-        local nodes_in_border = node_range:getAllBoderNodes()
+    function self.drawNodeRangeValues()
+        local nodes_in_range = self.node_range:getAllNodes()
+        for _,node in ipairs(nodes_in_range) do
+            local x,y = node.position[1], node.position[2]
+            local movement_cost = tostring(self.node_range:getReachCostAt(node.id))
+            self.drawCost(x*17,y*17,movement_cost)
+        end
+    end
+
+    function self.drawNodeBorderValues()
+        local nodes_in_border = self.node_range:getAllBoderNodes()
         for _,node in ipairs(nodes_in_border) do
             local x,y = node.position[1], node.position[2]
-            local cost = node_range:getBorderWeight(node.id)
-            love.graphics.print(cost, x*17, y*17)
+            local cost = self.node_range:getBorderWeight(node.id)
+            if cost then
+                self.drawCost(x*17,y*17,cost)
+            end
         end
     end
 
-end
-
---add the tiles of the map to a spritebath to draw it. 
-local function updateTileSet()
-    tileset:clear()
-
-    local y = 1
-    while tile_map[y] do
-        local x = 1
-        while tile_map[y][x] do
-            local tile = tile_map[y][x]
-            --a tile is added to the be draw... 
-            tileset:add(tileset_list[tile],x*17,y*17)
-
-            -- Here we ask if on that position exist a node marked
-            -- Fear not nested loops!, there is no one in "isNodeMarked"
-
-            if node_range:hasPoint({x,y}) then
-                --the next tile will be a "dark blue tone"
-                tileset:setColor(0,0.1,1) 
-                --is added a semitransparent tile over this one. 
-                tileset:add(tileset_list[29],x*17,y*17)
-            end
-
-            --mark the border in a red hue
-            if show_border and node_range:borderHasPoint({x,y}) then
-                tileset:setColor(1,0,0,1)
-                tileset:add(tileset_list[29],x*17,y*17)
-            end
-
-            tileset:setColor(1,1,1,1)
-            x=x+1
-        end
-        y=y+1
-    end
-end
-
---this is the function called every time the slider of "Range" changes.
-local function updateRange(x,y,range)
-    node_range = map_graph:constructNodeRange({x,y}, range ) --we do a new range stating on pos x,y
-    updateTileSet()
-end
-
---This is the function called each time you click on the map.
-local function saveNewStartPos()
-    if map_graph:hasPoint({m_ix,m_iy}) then
-        updateRange(m_ix, m_iy, range_slider:GetValue())
-        saved_x = m_ix
-        saved_y = m_iy
-    end
-end
-
---This function, is called to allow the diagonal movement
-local function setDiagonal(diagonal)
-    --[[ TODO
-    if Pajarito.getDiagonal() ~= diagonal then
-        Pajarito.useDiagonal(diagonal)
-        updateRange(saved_x,saved_y,range_slider:GetValue())
-    end
-    --]]
-end
-
---We request a new path every 0.15
-local function updatePath(x,y)
-    
-    --if timer has passed already 0.15 seconds
-    if timer.hanPasado(0.15) then
+    --We request a new path every 0.15
+    function self.requestNewPath()
         --[[
         Get path inside range, assume exist already a 
-        range of nodes. Then ask if the requested destination 
+        range of nodes. Then ask if the requested destination
         point is in that list. returns a table listing nodes
         from the starting point and ends on the destination
         --]]
-        generated_path = node_range:getPathTo({x,y})
+        self.generated_path = self.node_range:getPathTo({self.m_ix,self.m_iy})
     end
-end
 
-local tileset_image = nil
+    function self.drawPath()
+        if not self.generated_path then
+            return
+        end
 
-local function printPath()
-    local i = 1
-    for steep,node in generated_path:getNodes() do
-        local x, y = node.position[1], node.position[2]
-        love.graphics.setColor(0.7,0.7,0.7,0.5)
-        love.graphics.draw(tileset_image,tileset_list[14], x*17, y*17)
-
-        local str = '('..tostring(x)..','..tostring(y)..')'
-        love.graphics.print(str,542,20*i-80)
-
-        --this part draws a line between the center of this node an the next
         love.graphics.setColor(1,0.2,1)
-        local next_node = generated_path:getNodeAtSteep(steep+1)
-        if next_node then
-            local nx, ny = next_node.position[1], next_node.position[2]
-            love.graphics.line((x+0.5)*17, (y+0.5)*17,
-                                (nx+0.5)*17, (ny+0.5)*17)
+        love.graphics.setLineWidth(2)
+        for steep,node in self.generated_path:getNodes() do
+            local x, y = node.position[1], node.position[2]
+
+            --this part draws a line between the center of this node an the next
+            local next_node = self.generated_path:getNodeAtSteep(steep+1)
+            if next_node then
+                local nx, ny = next_node.position[1], next_node.position[2]
+                love.graphics.line((x+0.5)*17, (y+0.5)*17,
+                                    (nx+0.5)*17, (ny+0.5)*17)
+            end
         end
-    end
-end
-
---[[
-    *** And that's all!! ***
-    Now bellow starts the code unrelated to Pajarito. 
---]]
-
---this save the pos of the mouse when the click is pressed and is released
---used to drag and drop the camera  - sorry, not in this example :) -
-local pres_m = vector2D(0,0)
-local relas_m = vector2D(0,0)
-
-local is_mouse_pressed = false
-
-local tile_map_width = #tile_map[1]
-local tile_map_height= #tile_map
-
---a camera is created and placed on the center of the map
-local cam = Camera(
-    -(320)+((tile_map_width/2+1)*17),
-    -(180)+(tile_map_height*8))
-
---load a tileset image
-tileset_image = love.graphics.newImage('tileset.png')
-
---tileset contains the spritebatch we create from the source image
-tileset = love.graphics.newSpriteBatch(tileset_image,2000)
-
---tileset_list contains the quads used to draw the map
-tileset_list = makeQuads(320,320,16,16)
-
-
---here, the gui is build using loveframes-
-
-local container = nil
-container = loveframes.Create("panel")
-container:SetSize(980,125)
-
-local text = loveframes.Create("text", container)
-text:SetPos(20,5)
-text:SetWidth(260)
-text:SetText(
-[[
-This is the example of paths in range.
-Click on any part of the map to mark a new starting point.
-Put the mouse inside the range to generate and draw a path.
-]])
-text:SetShadowColor(.8, .8, .8, 1)
-text:SetShadow(true)
-
---Range SLiDer LaBel
-local rsld_lb = loveframes.Create("text", container)
-rsld_lb:SetPos(310,15)
-rsld_lb:SetWidth(280)
-rsld_lb:SetText('Range')
-
-local stored_range = 15
-
-range_slider = loveframes.Create("slider",container)
-range_slider:SetPos(370,13)
-range_slider:SetWidth(200)
-range_slider:SetMinMax(2,15)
-range_slider:SetDecimals(0)
-range_slider.OnValueChanged = function(object)
-    updateRange(saved_x,saved_y,object:GetValue())
-end
-
-rsld_lb.Update = function(object, dt)
-    stored_range = range_slider:GetValue()
-    object:SetText('Range '..tostring(stored_range))
-end
-
-local checkbox1 = loveframes.Create("checkbox", container)
-checkbox1:SetText("Show 'Deep of Range' numbers")
-checkbox1:SetPos(340, 40)
-
-local checkbox2 = loveframes.Create("checkbox", container)
-checkbox2:SetText("Show border outside range")
-checkbox2:SetPos(340, 65)
-
-local button = loveframes.Create("button", container)
-button:SetWidth(200)
-button:SetPos(40,90)
-button:SetText("Go back to main menu")
-button.OnClick = function(object, x, y)
-    loveframes.RemoveAll()
-    Pajarito.clearNodeInfo()
-    SCENA_MANAGER.pop()
-end
-
-local sub_container = loveframes.Create("panel",container)
-sub_container:SetSize(405,125)
-sub_container:SetPos(575)
-
-local button2 = loveframes.Create("button", container)
-
-button2:SetWidth(120)
-button2:SetPos(330,90)
-button2:SetText("Enter Draw Mode")
-button2.OnClick = function(object, x, y)
-    draw_mode = not draw_mode
-    object:SetText("Enter Draw Mode")
-    
-    sub_container.children = {}
-    sub_container.internals = {}
-    
-    if draw_mode then
-        object:SetText("Exit Draw Mode")
-        addDrawMapGUI()
-    else
-        addWeightGUI()
-    end
-    --loveframes.RemoveAll()
-    --SCENA_MANAGER.pop()
-end
-
-local checkbox3 = loveframes.Create("checkbox", container)
-checkbox3:SetText("Allow diagonal")
-checkbox3:SetPos(460, 95)
-
-function getImaOfTile(tile)
-    local can = love.graphics.newCanvas(16,16)
-    love.graphics.setCanvas(can)
-    love.graphics.draw(tileset_image,tileset_list[tile])
-    love.graphics.setCanvas()
-    return love.graphics.newImage(can:newImageData( ))
-end
-
-function addWeightGUI()
-    local text2 = loveframes.Create("text",sub_container)
-    text2:SetPos(5,5)
-    text2:SetWidth(400)
-    text2:SetText("Modify the weights of the tiles (a value of '0' means impassable)")
-    text2:SetShadowColor(.8, .8, .8, 1)
-    text2:SetShadow(true)
-
-    local i = 0
-    local j = 0
-    for k,v in pairs(table_of_weights) do
-        local nb = loveframes.Create("image", sub_container)
-        local x = 5+j*200
-        local y = 24*i+25
-        nb:SetSize(16,16)
-        nb:SetPos(x,y)
-        nb:SetImage(getImaOfTile(k))
-        
-        local text = loveframes.Create("text", sub_container)
-        text:SetPos(x+32,y)
-        text:SetWidth(280)
-        text:SetText('w: '..tostring(v))
-        
-        local sldr = loveframes.Create("slider",sub_container)
-        sldr:SetPos(x+65,y-3)
-        sldr:SetWidth(130)
-        sldr:SetMinMax(0,5)
-        sldr:SetDecimals(0)
-        sldr:SetValue(v)
-        
-        text.Update = function(object, dt)
-            object:SetText('w: '..tostring(sldr:GetValue()))
-        end
-        
-        sldr.OnValueChanged = function(object)
-            table_of_weights[k] = object:GetValue()
-            updateRange(saved_x,saved_y,stored_range)
-        end
-        
-        i=i+1
-        if i>3 then 
-            j = j+1
-            i = 0
-        end
-    end
-end
-
-function addDrawMapGUI()
-    local text2 = loveframes.Create("text",sub_container)
-    text2:SetPos(5,5)
-    text2:SetWidth(400)
-    text2:SetText("Chose a tile to draw")
-    text2:SetShadowColor(.8, .8, .8, 1)
-    text2:SetShadow(true)
-    
-    local text3 = loveframes.Create("text",sub_container)
-    text3:SetPos(200,5)
-    text3:SetWidth(200)
-    text3:SetText("Current tile")
-    text3:SetShadowColor(.8, .8, .8, 1)
-    text3:SetShadow(true)
-    
-    
-    local ima = loveframes.Create("image",sub_container)
-    ima:SetPos(205,20)
-    
-    local i = 0
-    local j = 0
-    for k,v in pairs(table_of_weights) do
-        local nb = loveframes.Create("imagebutton",sub_container)
-        local x = 25+i*24
-        local y = 24*j+25
-        --nb:SetSize(24,24)
-        nb:SetText('')
-        nb:SetPos(x,y)
-        nb:SetImage(getImaOfTile(k))
-        nb:SizeToImage()
-        nb.OnClick = function(object)
-            --object:SetText("The mouse entered the button.")
-            tile_to_draw = k
-            ima:SetImage(object.image)
-        end
-        
-        i=i+1
-        if i>2 then 
-            j = j+1
-            i = 0
-        end
-    end
-    
-    ima:SetImage(getImaOfTile(tile_to_draw))
-    ima:SetScale(4,4)
-end
-
-addWeightGUI()
---addDrawMapGUI()
-
---check if the mouse is over a element of the gui.
-function mouseOnGUI(gui_obj)
-    local x, y = love.mouse.getPosition()
-    return (x >= gui_obj.x and  (x < (gui_obj.x+gui_obj.width)))
-    and (y >= gui_obj.y and (y < (gui_obj.y+gui_obj.height)))
-end
-
---we start the timer
-timer.start()
-
-function Main()
-    local self = Escena()
-    love.window.setTitle("Pajarito Pathfinder Example: Path In Range")
-    
-    updateTileSet()
-    updatePath(1,1)
-    
-    function self.draw()
-        love.graphics.clear(0.1,0.1,0.1)
+        love.graphics.setLineWidth(1)
         love.graphics.setColor(1,1,1)
-        
-        love.graphics.push()
-        love.graphics.translate(math.floor(-cam.getPosX()),math.floor(-cam.getPosY()))
-        
-        local x, y = getMouseOnCanvas()
-        x,y = love.graphics.inverseTransformPoint(x,y)
-        
-        if not mouseOnGUI(container) then 
-            m_ix = math.floor(x/17)
-            m_iy = math.floor(y/17)
-            
-        end
-        
-        love.graphics.draw(tileset)
-        love.graphics.draw(tileset_image,tileset_list[13],m_ix*17,m_iy*17)
-        
-        printPath()
-        
-        if checkbox1:GetChecked() then
-            printNodeValues()
-        end
-        
-        
-        
-        
-        love.graphics.setColor(1,1,1)
-        
-        love.graphics.pop()
     end
-    
-    function self.update(dt)
-        cam.update(dt)
-        --if you ask, loveframes is updated on the main.
-        if show_border ~= checkbox2:GetChecked() then
-            show_border = checkbox2:GetChecked()
-            updateTileSet()
-        end
-        setDiagonal(checkbox3:GetChecked())
-        updatePath(m_ix,m_iy)
-    end
-    
-    function self.mousemoved(x, y, dx, dy, istouch)
-        if is_mouse_pressed and not mouseOnGUI(container) then
-            local x, y = getMouseOnCanvas()
-            relas_m.x = x
-            relas_m.y = y
-            local d = (pres_m-relas_m).magnitud()
-            if d > 8 then
-                local a = (relas_m-pres_m)
-                --cam.drag(a.x,a.y)
-                if draw_mode and draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) then
-                    tile_map[m_iy][m_ix] = tile_to_draw
-                end
-            end
-        end
-    end
-    
-    function self.mousepressed(x, y, button)
-        if button == 1 then
-            if not is_mouse_pressed and not mouseOnGUI(container) then
-                local x, y = getMouseOnCanvas()
-                pres_m.x = x
-                pres_m.y = y
-                relas_m.x = x
-                relas_m.y = y
-                is_mouse_pressed = true
-                if draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) then
-                    tile_map[m_iy][m_ix] = tile_to_draw
-                end
+
+    --- Changes the tile value of the given point in
+    -- the graph and on the tile map.
+    function self.updateMapTile(x,y,new_value)
+        if self.map_graph and self.map_graph:hasPoint({x,y}) then
+            -- We use this table to draw the map
+            -- so we have to update it
+            self.tile_map[y][x] = new_value
+
+            -- Update the node tile in the graph
+            self.map_graph:updateNodeTile({x,y},new_value)
+
+            -- Update the range with the new map info.
+            local position = self.node_range:getStartNodePosition()
+            local range = self.node_range.range
+            if position then
+                self.updateRange(position[1], position[2], range)
             end
         end
     end
 
-    function self.mousereleased(x, y, button)
-        if button == 1 then
-            local d = (relas_m-pres_m).magnitud()
-            if d > 16 then
-                local a = (relas_m-pres_m)
-                --cam.drop(a.x,a.y)
-            else
-                if not mouseOnGUI(container) then
-                    if not draw_mode then
-                        saveNewStartPos()
-                    end
-                end
+    -- This is called every time the slider of "Range" is updated
+    -- or when the start position of the range has been changed
+    function self.updateRange(x,y,range)
+        if self.node_range and self.map_graph:hasPoint({x,y}) then
+            local movement = nil -- use default movement
+            if self.gui.canGoDiagonal() then
+                movement = 'diagonal'
             end
-            if draw_mode and Pajarito.isNodeOnGrid(m_ix,m_iy) and not mouseOnGUI(container) then
-                tile_map[m_iy][m_ix] = tile_to_draw
-                updateRange(saved_x,saved_y,range_slider:GetValue())
-            end
-            is_mouse_pressed = false
+            self.node_range =
+                self.map_graph:constructNodeRange({x,y}, range, movement)
+            self.updateTilesToDraw()
         end
     end
-    
-    return self
+
+    -- This is to conect the GUI to this functions,
+    -- so the changes in the GUI can take effect.
+    self.gui.setSliderCallback(self.updateRange)
+    self.gui.bindTableWeights(self.table_of_weights)
+    self.gui.setRangePosition(initial_x, initial_y)
+    self.gui.setRangeSliderValue(max_allowed_cost)
+    self.m_ix = initial_x
+    self.m_iy = initial_y
+
+    return self;
 end
+
 
 return Main()
