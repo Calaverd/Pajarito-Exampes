@@ -147,14 +147,16 @@ function NodeRange:getAllBoderNodes()
     return nodes
 end
 
-
 --- Search if there is a path from the start node
 --- of the range to the destination.\
---- Returns a NodePath that contains the nodes that form
---- the path. The NodePath is empty if the path does not exist.
+--- Returns a NodePath that contains the nodes.\
+--- Unless warranty_shortest option is active, will
+--- return the first path that finds to the point.\
+--- The NodePath is empty if the path does not exist.
 ---@param destination number[] position of the destination
+---@param warranty_shortest_path? boolean Use only if you ABSOLUTELY need the shortest, Can be slower on large maps.
 ---@return NodePath path
-function NodeRange:getPathTo(destination)
+function NodeRange:getPathTo(destination, warranty_shortest_path)
     local destination_id = self:hasPoint(destination)
 
     local path = NodePath:new( 0, {self.width, self.height, self.depth})
@@ -164,35 +166,78 @@ function NodeRange:getPathTo(destination)
 
     local start_node_id = self.start_id
     local traversal_weights = self.node_traversal_weights
-    local current = self:getNode(destination_id --[[@as number]]) --[[@as Node]]
+    local current_node = self:getNode(destination_id --[[@as number]]) --[[@as Node]]
     local allowed_directions = Directions[self.map_type][self.type_movement] --[=[@as number[]]=]
 
-    path:addNode(current)
+    path:addNode(current_node)
     path.weight = traversal_weights[destination_id]
-    while current.id ~= start_node_id do
+    while current_node.id ~= start_node_id do
         local best_node = nil
-        local best_node_weight = 1000000
+        local best_node_weight = 10000000
+        ---@type {number:Node[]}
+        local nodes_by_weight = {}
         for _,direction in ipairs( allowed_directions ) do
-            local node = current.conections[direction]
+            local node = current_node.conections[direction]
 
             if not node or not traversal_weights[node.id] then
                 goto continue
             end
 
-            if traversal_weights[node.id] < best_node_weight then
-                best_node = self:getNode(node.id)
-                best_node_weight = traversal_weights[node.id]
+            local node_weight = traversal_weights[node.id]
+            if node_weight < best_node_weight then
+                best_node_weight = node_weight
             end
+            if not nodes_by_weight[node_weight] then
+                nodes_by_weight[node_weight] = {}
+            end
+            table.insert(nodes_by_weight[node_weight], 1, self:getNode(node.id))
 
             ::continue::
         end
-        if not best_node then
+
+        if #nodes_by_weight[best_node_weight] == 0 then
             print('Error, can not build path')
             return path
         end
-        current = best_node
+
+        if #nodes_by_weight[best_node_weight] > 1 then
+            -- There is more than one node that is a good option.
+            -- And for some reason you want to be ABSOLUTELY sure
+            -- to get the shortest path.
+            -- We are going to take the recursive rute T_T
+            if warranty_shortest_path then
+                local bifurcation_point = current_node
+                local minimun_branch = path
+                local minimun_branch_len = 100000
+                for _, node in ipairs(nodes_by_weight[best_node_weight]) do
+                    local branch = self:getPathTo(node.position, warranty_shortest_path);
+                    local branch_len = path:getIfMergedBranchLen(branch, bifurcation_point) or minimun_branch_len
+                    if minimun_branch_len > branch_len then
+                        minimun_branch_len = branch_len
+                        minimun_branch = branch
+                    end
+                end
+                return path:Merge(minimun_branch)
+            end
+
+            -- We do not deed that much 
+            local minimun_distace = 100000
+            for _, node in ipairs(nodes_by_weight[best_node_weight]) do
+                local sx,sy = unpack(self:getStartNodePosition() --[[@as number[] ]] )
+                local x, y = unpack(node.position)
+                local distance = math.abs(x-sx) + math.abs(y-sy)
+                if minimun_distace > distance then
+                    minimun_distace = distance
+                    best_node = node
+                end
+            end
+        else
+            best_node = nodes_by_weight[best_node_weight][1]
+        end
+
+        current_node = best_node
         path.weight = max(path.weight, best_node_weight)
-        path:addNode(current)
+        path:addNode(current_node)
     end
     return path
 end
