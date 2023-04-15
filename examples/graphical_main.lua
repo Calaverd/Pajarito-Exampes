@@ -6,9 +6,8 @@ local function Main()
 
     self.title = 'Graphical Main'
     self.gui.setDescriptionText(
-        'This is the example of paths in range.\n'..
-        'Click on any part of the map to mark a new starting point.\n'..
-        'Put the mouse inside the range to generate and draw a path.')
+        'This a graphical representation of the text based example '..
+        "used at the start of the Pajarito documentation.")
 
     self.tile_map = {
         { 1, 3, 2, 3, 1, 1, 1 },
@@ -135,7 +134,11 @@ local function Main()
         point is in that list. returns a table listing nodes
         from the starting point and ends on the destination
         --]]
-        self.generated_path = self.node_range:getPathTo({self.m_ix,self.m_iy})
+        self.generated_path =
+            self.node_range:getPathTo(
+                {self.m_ix,self.m_iy},
+                self.gui.canWarrantyShortest()
+            )
     end
 
     function self.drawPath()
@@ -143,7 +146,7 @@ local function Main()
             return
         end
 
-        love.graphics.setColor(1,0.2,1)
+        love.graphics.setColor(0.9,0.9,1)
         love.graphics.setLineWidth(2)
         for steep,node in self.generated_path:getNodes() do
             local x, y = node.position[1], node.position[2]

@@ -26,25 +26,40 @@ function GUIBuilder(tileset_image, tileset_list)
     local range_slider = nil
     local sliderCallback = function (x,y,r) end
     local checkbox_show_border = nil
+    local checkbox_show_border_value = false;
+
     local checkbox_show_range = nil
     local checkbox_show_range_value = true;
+
     local checkbox_range_numbers = nil
+    local checkbox_range_numbers_value = false
+
     local checkbox_border_numbers = nil
+    local checkbox_border_numbers_value = false
+
     local checkbox_toggle_diagonal = nil
+    local checkbox_toggle_diagonal_value = false
+
+    local checkbox_warranty_sortest = nil
+    local checkbox_warranty_sortest_value = false
+
     local sub_container = nil
     local rebuild = function ()  end
 
     function self.buildWeightEditorPanel()
         local editor_title = loveframes.Create("text",sub_container)
         editor_title:SetPos(5,5)
-        editor_title:SetWidth(400)
-        editor_title:SetText("Modify the weights of the tiles (a value of '0' means impassable)")
+        editor_title:SetWidth(410)
+        editor_title:SetText(
+          'Click on any part of the map to mark a new starting point.\n'..
+          'Put the mouse inside the range, if a path exist, will be draw.\n'..
+          "Modify the weights of the tiles (a value of '0' means impassable)")
         editor_title:SetShadowColor(.8, .8, .8, 1)
         editor_title:SetShadow(true)
 
         button_toggle_drawmode = loveframes.Create("button", sub_container)
         button_toggle_drawmode:SetWidth(120)
-        button_toggle_drawmode:SetPos(10,95)
+        button_toggle_drawmode:SetPos(10,122)
         button_toggle_drawmode:SetText("Draw On Map")
         button_toggle_drawmode.OnClick = function(object, x, y)
             self.is_on_draw_mode = not self.is_on_draw_mode
@@ -56,7 +71,7 @@ function GUIBuilder(tileset_image, tileset_list)
         for k,v in pairs(table_of_weights) do
             local nb = loveframes.Create("image", sub_container)
             local x = 5+(j*200)
-            local y = 25+(17*i)
+            local y = 49+(17*i)
             nb:SetSize(16,16)
             nb:SetPos(x+8,y)
             nb:SetImage(getImaOfTile(k))
@@ -142,26 +157,34 @@ function GUIBuilder(tileset_image, tileset_list)
         loveframes.RemoveAll()
         root_panel = loveframes.Create('panel')
         if self.is_on_draw_mode then
-            root_panel:SetSize(700,125)
+            root_panel:SetSize(700,148)
+            root_panel:SetPos(170,0)
         else
-            root_panel:SetSize(920,125)
+            root_panel:SetSize(920,148)
+            root_panel:SetPos(170,0)
         end
 
-        description_text = loveframes.Create('text', root_panel)
+        local description_panel = loveframes.Create('panel', root_panel)
+        description_panel:SetSize(270,148);
+        description_text = loveframes.Create('text', description_panel)
         description_text:SetPos(10,7)
         description_text:SetWidth(250)
-        description_text:SetShadowColor(.8, .8, .8, 0.8)
-        description_text:SetShadow(true)
         description_text:SetText(self.str_description_text)
 
-        button_go_back = loveframes.Create("button", root_panel)
+        button_go_back = loveframes.Create("button", description_panel)
         button_go_back:SetWidth(200)
-        button_go_back:SetPos(40,90)
+        button_go_back:SetPos(40,70)
         button_go_back:SetText("Go back to main menu")
         button_go_back.OnClick = function(object, x, y)
             loveframes.RemoveAll()
             SCENA_MANAGER.pop()
         end
+
+        local instructions = loveframes.Create("text",root_panel)
+        instructions:SetPos(10,112)
+        instructions:SetWidth(480)
+        instructions:SetShadowColor(.8, .8, .8, 1)
+        instructions:SetShadow(true)
 
         range_slider_text = loveframes.Create('text', root_panel)
         range_slider_text:SetPos(280,15)
@@ -194,25 +217,49 @@ function GUIBuilder(tileset_image, tileset_list)
         checkbox_show_border = loveframes.Create("checkbox", root_panel)
         checkbox_show_border:SetText("Mark Border Nodes")
         checkbox_show_border:SetPos(430, 40)
+        checkbox_show_border:SetChecked(checkbox_show_border_value)
+        checkbox_show_border.onChange = function ()
+            checkbox_show_border_value = not checkbox_show_border_value
+        end
 
         -- Same line
         checkbox_range_numbers = loveframes.Create("checkbox", root_panel)
         checkbox_range_numbers:SetText("Show Range Cost")
         checkbox_range_numbers:SetPos(280, 65)
+        checkbox_range_numbers:SetChecked(checkbox_range_numbers_value)
+        checkbox_range_numbers.onChange = function ()
+            checkbox_range_numbers_value = not checkbox_range_numbers_value
+        end
 
         checkbox_border_numbers = loveframes.Create("checkbox", root_panel)
         checkbox_border_numbers:SetText("Show Border Cost")
         checkbox_border_numbers:SetPos(430, 65)
+        checkbox_border_numbers:SetChecked(checkbox_border_numbers_value)
+        checkbox_border_numbers.onChange = function ()
+            checkbox_border_numbers_value = not checkbox_border_numbers_value
+        end
 
         checkbox_toggle_diagonal = loveframes.Create("checkbox", root_panel)
         checkbox_toggle_diagonal:SetText("Diagonal movement")
         checkbox_toggle_diagonal:SetPos(280, 90)
+        checkbox_toggle_diagonal:SetChecked(checkbox_toggle_diagonal_value)
+        checkbox_toggle_diagonal.onChange = function ()
+            checkbox_toggle_diagonal_value = not checkbox_toggle_diagonal_value
+        end
+
+        checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
+        checkbox_warranty_sortest:SetText("Warranty Shortest Path, usually not required")
+        checkbox_warranty_sortest:SetPos(280, 115)
+        checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
+        checkbox_warranty_sortest.onChange = function ()
+            checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+        end
 
         sub_container = loveframes.Create("panel",root_panel)
         if self.is_on_draw_mode then
-            sub_container:SetSize(180,125)
+            sub_container:SetSize(180,148)
         else
-            sub_container:SetSize(405,125)
+            sub_container:SetSize(405,148)
         end
         sub_container:SetPos(575)
 
@@ -277,6 +324,10 @@ function GUIBuilder(tileset_image, tileset_list)
 
     function self.canGoDiagonal()
         return checkbox_toggle_diagonal:GetChecked()
+    end
+
+    function self.canWarrantyShortest()
+        return checkbox_warranty_sortest:GetChecked()
     end
 
     rebuild()
@@ -408,7 +459,7 @@ function Main()
             end
 
             -- draw the cursor
-            love.graphics.draw(tileset_image,tileset_list[13],self.m_ix*17,self.m_iy*17)
+            love.graphics.draw(tileset_image,tileset_list[12],self.m_ix*17,self.m_iy*17)
 
             love.graphics.setColor(1,1,1)
         love.graphics.pop()
