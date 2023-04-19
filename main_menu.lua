@@ -1,6 +1,6 @@
 local example_list = {}
 table.insert(example_list, {'graphical_main','Pajarito main.lua'})
-table.insert(example_list, {'elemental','Elemental'})
+table.insert(example_list, {'clean_canvas','Clean canvas'})
 table.insert(example_list, {'elemental_walls','Basic Walls'})
 table.insert(example_list, {'weights','Using Weights'})
 table.insert(example_list, {'path_in_range','Path In Range'})

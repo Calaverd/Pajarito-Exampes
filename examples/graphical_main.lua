@@ -18,8 +18,8 @@ local function Main()
         { 1, 1, 1, 3, 3, 3, 2 },
         { 1, 1, 2, 2, 2, 3, 2 }
     }
-    self.tile_map_width = #self.tile_map
-    self.tile_map_height = #self.tile_map[1]
+    self.tile_map_width = #self.tile_map[1]
+    self.tile_map_height = #self.tile_map
 
     self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map})
 
@@ -126,14 +126,11 @@ local function Main()
         end
     end
 
-    --We request a new path every 0.15
+    --We request a new path every time that the GUI updates
     function self.requestNewPath()
-        --[[
-        Get path inside range, assume exist already a 
-        range of nodes. Then ask if the requested destination
-        point is in that list. returns a table listing nodes
-        from the starting point and ends on the destination
-        --]]
+        -- Ask if the requested destination point is contained
+        -- in the range, and returns a table listing nodes
+        -- from the starting point to the destination
         self.generated_path =
             self.node_range:getPathTo(
                 {self.m_ix,self.m_iy},
@@ -148,7 +145,7 @@ local function Main()
 
         love.graphics.setColor(0.9,0.9,1)
         love.graphics.setLineWidth(2)
-        for steep,node in self.generated_path:getNodes() do
+        for steep,node in self.generated_path:iterNodes() do
             local x, y = node.position[1], node.position[2]
 
             --this part draws a line between the center of this node an the next

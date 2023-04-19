@@ -158,10 +158,10 @@ function GUIBuilder(tileset_image, tileset_list)
         root_panel = loveframes.Create('panel')
         if self.is_on_draw_mode then
             root_panel:SetSize(700,148)
-            root_panel:SetPos(170,0)
+            root_panel:SetPos(152,0)
         else
             root_panel:SetSize(920,148)
-            root_panel:SetPos(170,0)
+            root_panel:SetPos(152,0)
         end
 
         local description_panel = loveframes.Create('panel', root_panel)
@@ -173,7 +173,7 @@ function GUIBuilder(tileset_image, tileset_list)
 
         button_go_back = loveframes.Create("button", description_panel)
         button_go_back:SetWidth(200)
-        button_go_back:SetPos(40,70)
+        button_go_back:SetPos(40,110)
         button_go_back:SetText("Go back to main menu")
         button_go_back.OnClick = function(object, x, y)
             loveframes.RemoveAll()
@@ -339,12 +339,15 @@ function Main()
     local self = Escena()
     --load a tileset image
     local tileset_image = love.graphics.newImage('/rsc/tileset.png')
+    local walls_image = love.graphics.newImage('/rsc/walls.png')
 
     --tileset contains the spritebatch we create from the source image
     local tileset = love.graphics.newSpriteBatch(tileset_image,2000)
+    local tileset_walls = love.graphics.newSpriteBatch(walls_image,2000)
 
     --tileset_list contains the quads used to draw the map
     local tileset_list = makeQuads(64,64,16,16)
+    local tiles_walls_list = makeQuads(48,48,16,16)
 
     local defaultFont = love.graphics.getFont()
     local pixelFont = love.graphics.newFont( '/rsc/pixel_fonts/PXSansBold.ttf', 17)
@@ -353,6 +356,7 @@ function Main()
 
     function self.updateTilesToDraw() end
 
+    function self.drawWalls() end
     function self.drawNodeRangeValues() end
     function self.drawNodeBorderValues() end
     function self.drawPath() end
@@ -380,13 +384,11 @@ function Main()
     local stored_value_show_range = self.gui.canShowRangeNodes()
     local stored_value_movement = self.gui.canGoDiagonal()
 
-    function self.getTileset()
-        return tileset
-    end
+    function self.getTileset() return tileset end
+    function self.getListOfTiles() return tileset_list end
 
-    function self.getListOfTiles()
-        return tileset_list
-    end
+    function self.getTilesetWalls() return tileset_walls end
+    function self.getListOfWallTiles() return tiles_walls_list end
 
     --- Get the coordinates in the tilemap were
     --- the mouse is
@@ -427,7 +429,7 @@ function Main()
     function self.draw()
         love.graphics.clear(0.1,0.1,0.1)
         love.graphics.setColor(1,1,1)
-
+        love.graphics.print('x: '..tostring(self.m_ix)..' y:'..tostring(self.m_iy))
         love.graphics.push()
             love.graphics.translate(
                 math.floor(-self.camera.getPosX()),
@@ -440,9 +442,18 @@ function Main()
             if not self.gui.hasMosueOver() then
                 self.m_ix = math.floor(x/17)
                 self.m_iy = math.floor(y/17)
+                
             end
 
             love.graphics.draw(tileset) -- draw the map
+            love.graphics.draw(tileset_walls) -- draw the walls
+
+            -- draw the cursor
+            local default_cursor = tileset_list[12]
+            if self.gui.is_on_draw_mode then
+                default_cursor = tileset_list[self.gui.active_draw_tile]
+            end
+            love.graphics.draw(tileset_image, default_cursor ,self.m_ix*17,self.m_iy*17)
 
             self.drawPath()
 
@@ -458,12 +469,8 @@ function Main()
                 love.graphics.setFont(defaultFont)
             end
 
-            -- draw the cursor
-            love.graphics.draw(tileset_image,tileset_list[12],self.m_ix*17,self.m_iy*17)
-
             love.graphics.setColor(1,1,1)
         love.graphics.pop()
-        love.graphics.print('Hola mundo!')
     end
 
     function self.update(dt)

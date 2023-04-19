@@ -1,35 +1,13 @@
-local Pajarito = require('pajarito')
+local Pajarito = require("pajarito")
 local GraphicsBase = require('libs/graphics')
-
-
-
--- Wall coords are given with this for human readable
--- Walls are given as a string, were each char means a
--- direction were there is a wall
--- [Q][W][E] 
--- [A]   [D]
--- [Z][X][C]
--- note that S is also equivalent to X
--- Pajarito uses integer to understand the walls, where each bit is a flag
--- each bit must be arrange like this
--- QECZ WDXA
--- So a string like 'WX' or 'XW' is translated to binary as
--- 0000 1010 
--- and that is transformet to the integer '10' on decimal
-
--- note that you can also add the walls usign the integer instead of the string
--- so 146 and 'QAZ', are equally valid. 
-
 
 local function Main()
     local self = GraphicsBase();
 
-    self.title = 'Walls'
+    self.title = 'Clean Canvas'
     self.gui.setDescriptionText(
-        'This example uses a set of walls to illustrate '..
-        'how they work and their differences.\n'..
-        'On one side, walls what block the horizontal but '..
-        'not diagonal, and in the other, walls that block both.')
+        'A map using a single weight tile.\n'..
+        'Use it to toy around an create custom test with the draw mode')
 
     self.tile_map = {
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -52,68 +30,6 @@ local function Main()
     self.tile_map_height = #self.tile_map
 
     self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map})
-
-    -- Note that the basic directions are:
-    --  [UP_LEFT]   [UP]   [UP_RIGHT]
-    --    [LEFT]            [RIGHT]
-    -- [DOWN_LEFT] [DOWN] [DOWN_RIGHT]
-    --
-    -- We can get the direction constants enum
-    -- or make use of the string names, but
-    -- here, for didactic purposes are mixed.
-    -- You can use the style that you like most.
-
-    local dir = Pajarito.directions.get()
-
-    local mergeDirections = Pajarito.directions.mergeDirections
-    -- If you think that the names are long, or want
-    -- to use your own nomenclature, you can create alias.
-    local setAlias = Pajarito.directions.setDirectionAlias
-    -- For single directions
-    setAlias('R0', dir.RIGHT)
-    setAlias('R', 'RIGHT')
-    setAlias('L', 'LEFT')
-    -- and also for the merge of directions
-    setAlias('RD', mergeDirections(dir.RIGHT, dir.DOWN))
-    setAlias('LR', mergeDirections('RIGHT', 'LEFT'))
-    setAlias('LU', mergeDirections('LEFT', dir.UP))
-    setAlias('UD', mergeDirections('UP', 'DOWN'))
-    -- You can even use symbols as alias...
-    setAlias('==', mergeDirections('UP_LEFT', 'UP', 'UP_RIGHT', 'DOWN_LEFT', 'DOWN', 'DOWN_RIGHT'))
-    setAlias('|<', mergeDirections('UP_LEFT','LEFT','DOWN_LEFT'))
-    setAlias('>|', mergeDirections('UP_RIGHT','RIGHT','DOWN_RIGHT'))
-    --- and merge the previously defined alias
-    setAlias('∩', mergeDirections('|<','UP','>|'))
-
-    -- This creates the walls, it needs a list with
-    -- the position followed by the the directions
-    -- that is facing
-    self.map_graph:buildWalls(
-        {
-            { { 22, 5 }, 'UP', 'DOWN' }, -- We can use the default directions
-            { { 21, 5 }, dir.UP, dir.DOWN }, -- the numerical constants
-            { { 20, 5 }, 'LU' }, -- or the alias we defined.
-
-            { { 20, 6 }, 'LR' }, { { 20, 7 }, 'LR' }, { { 20, 8 }, 'RD' },
-            { { 19, 8 }, 'UD' }, { { 18, 7 }, 'R' }, { { 18, 9 }, 'R' },
-            { { 18, 6 }, 'R','UP' }, { { 18, 10 },'RD' },
-            { {17,5}, 'R' }, { {17,4}, 'R' }, { {17,3}, 'R' },
-            { {17,2}, 'R' }, { {17,1}, 'R' }, { {17,11}, 'R' },
-            { {17,12}, 'R' }, { {17,13}, 'R' }, { {17,14}, 'R' },
-            { {17,15}, 'R' }, { {17,6}, 'R' }, { {17,7}, 'R' },
-            { {17,8}, 'R' }, { {8,5}, '=='},  { {9,5}, '=='},
-            { {10,5}, 'UP_LEFT','UP','>|','DOWN_LEFT' },
-            { {10,6}, '|<','>|' }, { {10,7}, '|<','>|' }, { {10,8}, '|<','DOWN', 'DOWN_RIGHT', 'UP_RIGHT' },
-            { {11,8}, '=='}, { {12,7}, '|<' }, { {12,9}, '|<' },
-            { {12,6}, '|<','UP','UP_RIGHT' }, { {12,10}, '|<','DOWN','DOWN_RIGHT' },
-            { {13,6}, 'UP_LEFT' },
-            { {13,5}, '|<' }, { {13,4}, '|<' }, { {13,3}, '|<' },
-            { {13,2}, '|<' }, { {13,1}, '|<' }, { {13,10}, 'DOWN_LEFT' },
-            { {13,11}, '|<' }, { {13,12}, '|<' }, { {13,13}, '|<' },
-            { {13,14}, '|<' }, { {13,15}, '|<' }, { {12,6}, '∩' },
-            { {12,7}, '|<','>|'}, { {12,8}, '>|', 'UP_LEFT', 'DOWN_LEFT' }
-        }
-    )
 
     -- This initializes all the nodes and their conections in the graph.
     -- This operation can be a little bit expensive depending on the map size
@@ -170,7 +86,7 @@ local function Main()
                 -- Here we ask if on that position
                 -- the range has node of that kind
                 -- Fear not nested loops!
-                -- All 'hasPoint' methods do checks in linear time.
+                -- All "hasPoint" methods do checks in linear time.
 
                 if self.gui.canShowRangeNodes() then
                     if self.node_range:hasPoint({x,y}) then
@@ -195,34 +111,6 @@ local function Main()
                 end
 
                 tileset:setColor(1,1,1,1)
-            end
-        end
-
-        --- To draw the walls
-
-        local tileset_walls = self.getTilesetWalls()
-        local list_of_wall_tiles = self.getListOfWallTiles()
-        tileset_walls:clear()
-        local dir_enum = Pajarito.directions.get()
-        -- We define a map were each direction is
-        -- maped to one specific tile in the tileset
-        local direction_to_tile = {
-            [ dir_enum.UP_LEFT ] = 1,
-            [ dir_enum.UP ] = 2,
-            [ dir_enum.UP_RIGHT ] = 3,
-            [ dir_enum.LEFT ] = 4,
-            [ dir_enum.RIGHT ] = 6,
-            [ dir_enum.DOWN_LEFT ] = 7,
-            [ dir_enum.DOWN ] = 8,
-            [ dir_enum.DOWN_RIGHT ] = 9,
-        }
-        for position, wall_value in self.map_graph:iterWalls() do
-            local x,y = unpack(position)
-            local directions = Pajarito.directions.splitDirections(wall_value)
-            -- draw the tile to their corresponding direction
-            for _,direction in ipairs(directions) do
-                local tile = direction_to_tile[direction]
-                tileset_walls:add( list_of_wall_tiles[tile], x*17, y*17)
             end
         end
     end
@@ -301,7 +189,7 @@ local function Main()
         end
     end
 
-    -- This is called every time the slider of 'Range' is updated
+    -- This is called every time the slider of "Range" is updated
     -- or when the start position of the range has been changed
     function self.updateRange(x,y,range)
         if self.node_range and self.map_graph:hasPoint({x,y}) then
