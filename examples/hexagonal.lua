@@ -218,7 +218,7 @@ end
 function updatePath(x,y)
     
     --if timer has passed already 0.15 seconds
-    if timer.hanPasado(0.15) then
+    if timer.hasPassed(0.15) then
     --[[
     Get path inside range, assume exist already a 
     range of nodes. Then ask if the requested destination 
