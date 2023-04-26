@@ -5,7 +5,6 @@ io.stdout:setvbuf("no")
 
 -- mini_core.lua contains:
 --    a simple vector implementation (vector2D)
---    a camera (Camera) that, ironically uses tween
 --    a chronometer (Chrono)
 --    a funtion to split a image to form quads (makeQuads)
 love.filesystem.load("libs/mini_core.lua")()
@@ -16,8 +15,8 @@ love.filesystem.load("libs/escena.lua")()
 --Loveframes is the  library used to generate the gui 
 loveframes = require("libs/loveframes")
 
---"tween.lua is a small library to perform tweening in Lua."
-tween = require("libs/tween")
+--"flux.lua is a small library to perform tweening in Lua."
+flux = require("libs/flux")
 
 --setting the graphics mode 
 love.window.setTitle("Pajarito Pathfinder Examples")
@@ -70,10 +69,10 @@ function love.load()
     --we start here chronometers
     GARBAGE_TIMER.start()
     DRAW_TIMER.start()
-    
+
     --we set the canvas size to be a quarter of the size of the window
     CANVAS = love.graphics.newCanvas(640,360)
-    
+
     --we load the first of the scenes, in this case, the main menu
     --local init_scene =  love.filesystem.load("examples/elemental.lua")()
     local init_scene =  love.filesystem.load("main_menu.lua")()
@@ -85,7 +84,7 @@ end
 function love.update(dt)
     --this is used to handle the resolution. 
     IS_CHANGED_RESOLUTION = (old_factor ~= getCanvasScaleFactor())
-    
+
     --[[
     Here is some dark magic used to keep a consistent
     update dt indepentend of the used hardware and framerate
@@ -93,19 +92,20 @@ function love.update(dt)
     --]]
     local accum = dt
 	while accum > 0 do
-		local dt = math.min( 1/60, accum )	
+		local dt = math.min( 1/60, accum )
 		accum = accum - dt
 		SCENA_MANAGER.update(dt) --we update the scenes
         loveframes.update(dt)    --update the gui
+        flux.update(dt)
         --check for changes on the size of the window
         if IS_CHANGED_RESOLUTION then
             old_factor = getCanvasScaleFactor()
             IS_CHANGED_RESOLUTION = false
         end
     end
-    
+
     --collencting the garbage each 5 seconds
-    if GARBAGE_TIMER.hanPasado(5) then
+    if GARBAGE_TIMER.hasPassed(5) then
         --print('recolector')
         collectgarbage()
     end
@@ -120,30 +120,30 @@ function mouseOnGUI(gui_obj)
 end
 
 function love.draw()
-    
+
     --we try to draw the canvas at 65 fps, 
     --if the machine is slower, the frame rate drops.
-    if DRAW_TIMER.hanPasado(1/65) then
-        
+    if DRAW_TIMER.hasPassed(1/65) then
+
         love.graphics.setCanvas(CANVAS)
         SCENA_MANAGER.draw()
         love.graphics.setCanvas()
-        
+
     end
 
     love.graphics.setColor(1,1,1)
-    
+
     --we draw here the canvas scaled and draw 
     --to acount for the resize
     local factor = SIZE_WIN_H/(360)
     local x = (SIZE_WIN_W/2)-(320*factor)
     local y = (SIZE_WIN_H/2)-(180*factor)
     love.graphics.draw(CANVAS,x,y,0,factor,factor)
-    
+
     --GUI is draw on top of everything
     love.graphics.setColor(1,1,1,1)
     loveframes.draw()
-    
+
 end
 
 --[[

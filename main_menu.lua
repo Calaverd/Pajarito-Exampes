@@ -1,8 +1,9 @@
 local example_list = {}
-table.insert(example_list, {'graphical_main','Pajarito main.lua'})
 table.insert(example_list, {'clean_canvas','Clean canvas'})
-table.insert(example_list, {'elemental_walls','Basic Walls'})
 table.insert(example_list, {'weights','Using Weights'})
+table.insert(example_list, {'elemental_walls','Basic Walls'})
+table.insert(example_list, {'entities','Basic Entities'})
+table.insert(example_list, {'graphical_main','Pajarito main.lua'})
 table.insert(example_list, {'path_in_range','Path In Range'})
 table.insert(example_list, {'pathfinder','Standar Pathfinder'})
 --example_list[5] = {'hexagonal','Hexagonal'}
