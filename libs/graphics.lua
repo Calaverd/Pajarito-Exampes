@@ -14,6 +14,7 @@ function GUIBuilder(tileset_image, tileset_list)
     self.str_description_text = ''
     self.is_on_draw_mode = false
 
+    local show_minimal_gui = false
     local saved_x = 1
     local saved_y = 1
     local table_of_weights = {}
@@ -156,13 +157,20 @@ function GUIBuilder(tileset_image, tileset_list)
     rebuild = function()
         loveframes.RemoveAll()
         root_panel = loveframes.Create('panel')
+        local pos_panel = 152
+        local height_panel = 148
+        local width_panel = 700
         if self.is_on_draw_mode then
-            root_panel:SetSize(700,148)
-            root_panel:SetPos(152,0)
+            width_panel = 700
         else
-            root_panel:SetSize(920,148)
-            root_panel:SetPos(152,0)
+            width_panel = 920
         end
+        if show_minimal_gui then
+            pos_panel = 340
+            width_panel = 600
+        end
+        root_panel:SetSize(width_panel, height_panel)
+        root_panel:SetPos(pos_panel,0)
 
         local description_panel = loveframes.Create('panel', root_panel)
         description_panel:SetSize(270,148);
@@ -186,24 +194,27 @@ function GUIBuilder(tileset_image, tileset_list)
         instructions:SetShadowColor(.8, .8, .8, 1)
         instructions:SetShadow(true)
 
-        range_slider_text = loveframes.Create('text', root_panel)
-        range_slider_text:SetPos(280,15)
-        range_slider_text:SetWidth(280)
-        range_slider_text:SetText('Range '..tostring(stored_range))
-        range_slider_text.Update = function(object, dt)
-            stored_range = range_slider:GetValue()
-            object:SetText('Range '..tostring(stored_range))
-        end
 
-        range_slider = loveframes.Create("slider", root_panel)
-        range_slider:SetPos(340,13)
-        range_slider:SetWidth(225)
-        range_slider:SetMinMax(2,15)
-        range_slider:SetValue(stored_range)
-        range_slider:SetDecimals(0)
-        range_slider.OnValueChanged = function(object)
-            stored_range = object:GetValue()
-            sliderCallback(saved_x,saved_y,object:GetValue())
+        if not show_minimal_gui then
+            range_slider_text = loveframes.Create('text', root_panel)
+            range_slider_text:SetPos(280,15)
+            range_slider_text:SetWidth(280)
+            range_slider_text:SetText('Range '..tostring(stored_range))
+            range_slider_text.Update = function(object, dt)
+                stored_range = range_slider:GetValue()
+                object:SetText('Range '..tostring(stored_range))
+            end
+
+            range_slider = loveframes.Create("slider", root_panel)
+            range_slider:SetPos(340,13)
+            range_slider:SetWidth(225)
+            range_slider:SetMinMax(2,15)
+            range_slider:SetValue(stored_range)
+            range_slider:SetDecimals(0)
+            range_slider.OnValueChanged = function(object)
+                stored_range = object:GetValue()
+                sliderCallback(saved_x,saved_y,object:GetValue())
+            end
         end
 
         checkbox_show_range = loveframes.Create("checkbox", root_panel)
@@ -239,20 +250,26 @@ function GUIBuilder(tileset_image, tileset_list)
             checkbox_border_numbers_value = not checkbox_border_numbers_value
         end
 
-        checkbox_toggle_diagonal = loveframes.Create("checkbox", root_panel)
-        checkbox_toggle_diagonal:SetText("Diagonal movement")
-        checkbox_toggle_diagonal:SetPos(280, 90)
-        checkbox_toggle_diagonal:SetChecked(checkbox_toggle_diagonal_value)
-        checkbox_toggle_diagonal.onChange = function ()
-            checkbox_toggle_diagonal_value = not checkbox_toggle_diagonal_value
+        if not show_minimal_gui then
+            checkbox_toggle_diagonal = loveframes.Create("checkbox", root_panel)
+            checkbox_toggle_diagonal:SetText("Diagonal movement")
+            checkbox_toggle_diagonal:SetPos(280, 90)
+            checkbox_toggle_diagonal:SetChecked(checkbox_toggle_diagonal_value)
+            checkbox_toggle_diagonal.onChange = function ()
+                checkbox_toggle_diagonal_value = not checkbox_toggle_diagonal_value
+            end
+
+            checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
+            checkbox_warranty_sortest:SetText("Warranty Shortest Path, usually not required")
+            checkbox_warranty_sortest:SetPos(280, 115)
+            checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
+            checkbox_warranty_sortest.onChange = function ()
+                checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+            end
         end
 
-        checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
-        checkbox_warranty_sortest:SetText("Warranty Shortest Path, usually not required")
-        checkbox_warranty_sortest:SetPos(280, 115)
-        checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
-        checkbox_warranty_sortest.onChange = function ()
-            checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+        if show_minimal_gui then
+            return
         end
 
         sub_container = loveframes.Create("panel",root_panel)
@@ -330,6 +347,11 @@ function GUIBuilder(tileset_image, tileset_list)
         return checkbox_warranty_sortest:GetChecked()
     end
 
+    function self.setMinimal(show)
+        show_minimal_gui = show
+        rebuild()
+    end
+
     rebuild()
     return self
 end
@@ -360,6 +382,7 @@ function Main()
     function self.drawNodeRangeValues() end
     function self.drawNodeBorderValues() end
     function self.drawPath() end
+    function self.drawEntities() end
 
     function self.requestNewPath() end
 
@@ -400,12 +423,6 @@ function Main()
     --- Were WE do configure this before the first run.
     function self.build()
         love.window.setTitle(self.title)
-
-            --a camera is created and placed on the center of the map
-        self.camera = Camera(
-            -(320)+((self.tile_map_width/2+1)*17),
-            -(180)+(self.tile_map_height*8))
-
         self.updateTilesToDraw()
     end
 
@@ -442,7 +459,7 @@ function Main()
             if not self.gui.hasMosueOver() then
                 self.m_ix = math.floor(x/17)
                 self.m_iy = math.floor(y/17)
-                
+
             end
 
             love.graphics.draw(tileset) -- draw the map
@@ -455,13 +472,17 @@ function Main()
             end
             love.graphics.draw(tileset_image, default_cursor ,self.m_ix*17,self.m_iy*17)
 
-            self.drawPath()
+            if not self.animate_translation then
+                self.drawPath()
+            end
+
+            self.drawEntities()
 
             if self.gui.canShowRangeValues() then
-                love.graphics.setFont(pixelFont)
-                self.drawNodeRangeValues()
-                love.graphics.setFont(defaultFont)
-            end
+                    love.graphics.setFont(pixelFont)
+                    self.drawNodeRangeValues()
+                    love.graphics.setFont(defaultFont)
+                end
 
             if self.gui.canShowBorderValues() then
                 love.graphics.setFont(pixelFont)
