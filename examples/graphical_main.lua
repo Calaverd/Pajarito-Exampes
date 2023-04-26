@@ -41,14 +41,14 @@ local function Main()
     -- We define a set of weights or traversal cost
     -- for the posible tiles on the map
     self.table_of_weights = {}
-    self.table_of_weights[1] = 1  --grass    tile 1 -> 1
-    self.table_of_weights[2] = 3  --sand     tile 2 -> 2
-    self.table_of_weights[3] = 0  --mountain tile 3 -> 0
-    self.table_of_weights[4] = 2  --woods    tile 4 -> 2
-    self.table_of_weights[5] = 0  --piramid  tile 5 -> 0
-    self.table_of_weights[6] = 1  --dirt     tile 8 -> 1
-    self.table_of_weights[7] = 0  --lava     tile 9 -> 0
-    self.table_of_weights[8] = 0 --water   tile 10 -> 0
+    self.table_of_weights[1] = 1 --grass    tile 1 -> 1
+    self.table_of_weights[2] = 3 --sand     tile 2 -> 2
+    self.table_of_weights[3] = 0 --mountain tile 3 -> 0
+    self.table_of_weights[4] = 2 --woods    tile 4 -> 2
+    self.table_of_weights[5] = 0 --piramid  tile 5 -> 0
+    self.table_of_weights[7] = 1 --dirt     tile 7 -> 1
+    self.table_of_weights[8] = 0 --lava     tile 8 -> 0
+    self.table_of_weights[9] = 0 --water    tile 9 -> 0
     -- Inform to the graph to take the weights into acount
     self.map_graph:setWeightMap(self.table_of_weights)
 
