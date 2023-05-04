@@ -331,7 +331,7 @@ local function Main()
                     end
                 end
             end
-            -- check if the click was inide the generated range.
+            -- check if the click was inside the generated range.
             if self.node_range:hasPoint({x,y}) then
                 -- move the object final position with in the graph
                 self.map_graph:translasteObject(current_entity,{x,y})

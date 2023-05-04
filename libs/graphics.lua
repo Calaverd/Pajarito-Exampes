@@ -15,6 +15,7 @@ function GUIBuilder(tileset_image, tileset_list)
     self.is_on_draw_mode = false
 
     local show_minimal_gui = false
+    local show_pathfinder_gui = false
     local saved_x = 1
     local saved_y = 1
     local table_of_weights = {}
@@ -195,7 +196,7 @@ function GUIBuilder(tileset_image, tileset_list)
         instructions:SetShadow(true)
 
 
-        if not show_minimal_gui then
+        if not show_minimal_gui and not show_pathfinder_gui then
             range_slider_text = loveframes.Create('text', root_panel)
             range_slider_text:SetPos(280,15)
             range_slider_text:SetWidth(280)
@@ -259,12 +260,24 @@ function GUIBuilder(tileset_image, tileset_list)
                 checkbox_toggle_diagonal_value = not checkbox_toggle_diagonal_value
             end
 
-            checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
-            checkbox_warranty_sortest:SetText("Warranty Shortest Path, usually not required")
-            checkbox_warranty_sortest:SetPos(280, 115)
-            checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
-            checkbox_warranty_sortest.onChange = function ()
-                checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+            if not show_pathfinder_gui then
+                checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
+                checkbox_warranty_sortest:SetText("Warranty Shortest Path, usually not required")
+                checkbox_warranty_sortest:SetPos(280, 115)
+                checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
+                checkbox_warranty_sortest.onChange = function ()
+                    checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+                end
+            else
+                --[[
+                    checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
+                    checkbox_warranty_sortest:SetText("Use Dijkstra instead of A*")
+                    checkbox_warranty_sortest:SetPos(280, 115)
+                    checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
+                    checkbox_warranty_sortest.onChange = function ()
+                        checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+                    end
+                ]]
             end
         end
 
@@ -347,8 +360,17 @@ function GUIBuilder(tileset_image, tileset_list)
         return checkbox_warranty_sortest:GetChecked()
     end
 
+    function self.useDijkstra()
+        return checkbox_warranty_sortest:GetChecked()
+    end
+
     function self.setMinimal(show)
         show_minimal_gui = show
+        rebuild()
+    end
+
+    function self.setPathfinderMode(show)
+        show_pathfinder_gui = show
         rebuild()
     end
 
@@ -449,8 +471,8 @@ function Main()
         love.graphics.print('x: '..tostring(self.m_ix)..' y:'..tostring(self.m_iy))
         love.graphics.push()
             love.graphics.translate(
-                math.floor(-self.camera.getPosX()),
-                math.floor(-self.camera.getPosY())
+                math.floor((320)-((self.tile_map_width/2+1)*17)),
+                math.floor((180)-(self.tile_map_height*8))
             )
 
             local x, y = getMouseOnCanvas()
@@ -471,6 +493,9 @@ function Main()
                 default_cursor = tileset_list[self.gui.active_draw_tile]
             end
             love.graphics.draw(tileset_image, default_cursor ,self.m_ix*17,self.m_iy*17)
+            if self.picked then
+                self.picked.drawAtPos(self.m_ix*17, self.m_iy*17)
+            end 
 
             if not self.animate_translation then
                 self.drawPath()
