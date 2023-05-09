@@ -31,7 +31,7 @@ function EscenaManager()
     function self.update(dt) 
         self.pila_escenas[#self.pila_escenas].update(dt)
         if self.pila_escenas[#self.pila_escenas].EXIT then
-            self.pop(#self.pila_escenas)
+            self.pop()
         end
     end
     

@@ -1,32 +1,9 @@
 local Pajarito = require("pajarito")
 local GraphicsBase = require('libs/graphics')
-
-local cronoAnimation = Chrono()
-local animationFrame = 1
-cronoAnimation.start()
-local sprite_entities = love.graphics.newImage('/rsc/entities.png')
-local quads_entities = makeQuads(64,64,16,16)
-
----comment
----@param type number
----@return table
-function BaseEntitie(type, graph_map)
-    local self = {}
-    self.x = 1
-    self.y = 1
-
-    function self.draw()
-        if cronoAnimation.hasPassed(0.15) then
-            animationFrame = math.fmod(animationFrame,4)+1
-        end
-        love.graphics.draw(sprite_entities, quads_entities[type+animationFrame], self.x*17, self.y*17 )
-    end
-    return self
-end
-
+local BaseEntity = require('libs/base_entity')
 
 function Angel(x,y)
-    local self = BaseEntitie(4)
+    local self = BaseEntity(4)
     local angel_table_of_weights = {}
     angel_table_of_weights[1] = 1 --grass
     angel_table_of_weights[2] = 2 --sand
@@ -48,7 +25,7 @@ end
 
 
 function Demon(x,y)
-    local self = BaseEntitie(8)
+    local self = BaseEntity(8)
     local demon_table_of_weights = {}
     demon_table_of_weights[1] = 1 --grass
     demon_table_of_weights[2] = 1 --sand
@@ -69,7 +46,7 @@ end
 
 
 function Knight(x,y)
-    local self = BaseEntitie(0)
+    local self = BaseEntity(0)
     local knight_table_of_weights = {}
     knight_table_of_weights[1] = 1 --grass
     knight_table_of_weights[2] = 3 --sand
@@ -89,7 +66,7 @@ function Knight(x,y)
 end
 
 function Banner(x,y)
-    local self = BaseEntitie(12)
+    local self = BaseEntity(12)
     self.x = x
     self.y = y
     self.group = 'Banners'

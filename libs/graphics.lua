@@ -269,15 +269,13 @@ function GUIBuilder(tileset_image, tileset_list)
                     checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
                 end
             else
-                --[[
-                    checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
-                    checkbox_warranty_sortest:SetText("Use Dijkstra instead of A*")
-                    checkbox_warranty_sortest:SetPos(280, 115)
-                    checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
-                    checkbox_warranty_sortest.onChange = function ()
-                        checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
-                    end
-                ]]
+                checkbox_warranty_sortest = loveframes.Create("checkbox", root_panel)
+                checkbox_warranty_sortest:SetText("Use Dijkstra instead of A*")
+                checkbox_warranty_sortest:SetPos(280, 115)
+                checkbox_warranty_sortest:SetChecked(checkbox_warranty_sortest_value)
+                checkbox_warranty_sortest.onChange = function ()
+                    checkbox_warranty_sortest_value = not checkbox_warranty_sortest_value
+                end
             end
         end
 
@@ -428,6 +426,7 @@ function Main()
     local stored_value_show_border = self.gui.canShowRangeBorder()
     local stored_value_show_range = self.gui.canShowRangeNodes()
     local stored_value_movement = self.gui.canGoDiagonal()
+    local stored_value_use_dijkstra = self.gui.useDijkstra()
 
     function self.getTileset() return tileset end
     function self.getListOfTiles() return tileset_list end
@@ -495,7 +494,7 @@ function Main()
             love.graphics.draw(tileset_image, default_cursor ,self.m_ix*17,self.m_iy*17)
             if self.picked then
                 self.picked.drawAtPos(self.m_ix*17, self.m_iy*17)
-            end 
+            end
 
             if not self.animate_translation then
                 self.drawPath()
@@ -522,6 +521,11 @@ function Main()
     function self.update(dt)
         if stored_value_show_border ~= self.gui.canShowRangeBorder() then
             stored_value_show_border = self.gui.canShowRangeBorder()
+            self.updateTilesToDraw()
+        end
+        if stored_value_use_dijkstra ~= self.gui.useDijkstra() then
+            stored_value_use_dijkstra = self.gui.useDijkstra()
+            self.requestNewPath()
             self.updateTilesToDraw()
         end
         if stored_value_show_range ~= self.gui.canShowRangeNodes() then

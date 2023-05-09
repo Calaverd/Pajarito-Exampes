@@ -2,58 +2,51 @@ local Pajarito = require("pajarito")
 local GraphicsBase = require('libs/graphics')
 local BaseEntity = require('libs/base_entity')
 
-function Knight(x,y)
-    local self = BaseEntity(0)
+function Portal(x,y)
+    local self = BaseEntity(16)
     self.x = x
     self.y = y
     return self
 end
 
-function Banner(x,y)
-    local self = BaseEntity(12)
-    self.x = x
-    self.y = y
-    return self
-end
 
 local function Main()
     local self = GraphicsBase();
 
-    self.title = 'Basic Weights'
+    self.title = 'Portals'
     self.gui.setDescriptionText(
-        'This example showcases the pathfinder that takes into acount the weights')
-    self.gui.setPathfinderMode(true)
+        'A map were to points are conected by a portal\n'..
+        'Click on the portal to move it towards another part.')
 
     self.tile_map = {
-        {3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3},
-        {5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,4,4,4,1,1,1,1,5},
-        {5,1,1,2,1,1,1,1,1,1,4,1,1,1,1,1,1,1,1,1,1,4,2,2,2,1,1,1,1,5},
-        {5,1,1,2,1,1,1,1,1,1,1,1,1,1,5,4,1,1,1,1,5,5,5,5,5,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,1,1,5,1,4,5,5,5,1,1,1,5,2,1,1,1,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,1,4,1,5,4,5,1,4,1,1,4,5,2,1,1,1,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,5,4,4,4,4,5,4,4,5,5,4,5,2,2,1,1,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,4,4,5,4,4,4,4,4,2,5,2,2,1,2,2,1,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,5,1,4,5,4,4,4,4,4,2,5,4,4,1,1,2,1,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,1,1,5,5,5,1,4,4,2,5,4,1,1,1,1,2,1,1,1,1,5},
-        {5,1,1,1,1,1,1,1,1,1,1,1,4,5,1,1,1,2,5,1,4,4,1,1,2,2,1,1,1,5},
-        {5,1,1,4,4,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,4,1,1,1,1,1,1,1,1,5},
-        {5,1,4,4,4,4,1,1,1,1,4,1,1,1,1,1,4,4,1,4,1,4,1,1,1,1,1,1,1,5},
-        {5,1,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5},
-        {3,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,7,5,5,5,5,5,7,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,7,5,7,7,7,5,7,1,3,3,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,7,5,5,7,5,5,7,1,3,3,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,3,3,3,1,1,1,1,1,1},
+        {1,1,1,1,2,2,2,2,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1,1},
+        {1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,3,3,3,9,9,1,1,1,1},
+        {1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1},
+        {1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1},
+        {1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,1,4,4,4,9,1,1,1,1},
+        {1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,4,4,4,1,1,1,1,1,1},
+        {1,1,1,1,2,2,2,2,2,1,1,1,1,4,4,4,4,4,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     }
     self.tile_map_width = #self.tile_map[1]
     self.tile_map_height = #self.tile_map
 
     -- Define some entities that the user can click, their position
-    -- will be the stat and destination points for the pathfinder.
-    local knight = Knight(28,8)
-    local banner = Banner(3,8)
-    self.picked = knight
+    -- will be the position were the portals will be.
+    local portal_a = Portal(23,8)
+    local portal_b = Portal(3,8)
 
     -- add they to a function to be draw later
     self.drawEntities = function ()
-        knight.draw()
-        banner.draw()
+        portal_a.draw()
+        portal_b.draw()
     end
 
     self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map})
@@ -63,11 +56,18 @@ local function Main()
     -- Call it once before starting to use the methods of the graph object.
     self.map_graph:build()
 
+    self.map_graph:createPortalBetween(portal_a.getPos(), portal_b.getPos())
 
-    -- Creates an special kind of object that contains the path and the
-    -- explored nodes (node range) to reach that position
-    self.generated_path, self.node_range =
-                self.map_graph:findPath(knight.getPos(), banner.getPos())
+    -- Creates an special kind of object that contains all nodes
+    -- in the given reach from within the given node position
+    local max_allowed_cost = 5
+    local initial_x = 5
+    local initial_y = 8
+
+    self.node_range =
+        self.map_graph:constructNodeRange(
+            {initial_x, initial_y},
+            max_allowed_cost)
 
     -- We define a set of weights or traversal cost
     -- for the posible tiles on the map
@@ -82,6 +82,8 @@ local function Main()
     self.table_of_weights[9] = 0 --water    tile 9 -> 0
     -- Inform to the graph to take the weights into acount
     self.map_graph:setWeightMap(self.table_of_weights)
+
+    self.generated_path = nil -- define this for a later use.
 
     -- This method used to update the tiles to draw
     -- and is called only once an update has been made.
@@ -108,8 +110,7 @@ local function Main()
                 -- Fear not nested loops!
                 -- All "hasPoint" methods do checks in linear time.
 
-                if self.gui.canShowRangeNodes() and self.node_range
-                    and not self.animate_translation then
+                if self.gui.canShowRangeNodes() then
                     if self.node_range:hasPoint({x,y}) then
                         if self.node_range:isStartNodePosition({x,y}) then
                             tileset:add(tile_for_range_start, x*17, y*17)
@@ -119,8 +120,7 @@ local function Main()
                     end
                 end
 
-                if self.gui.canShowRangeBorder() and self.node_range
-                     and not self.animate_translation then
+                if self.gui.canShowRangeBorder() then
                     local node_id = self.node_range:borderHasPoint({x,y})
                     if node_id then
                         local cost = self.node_range:getBorderWeight(node_id --[[@as integer]])
@@ -138,9 +138,6 @@ local function Main()
     end
 
     function self.drawNodeRangeValues()
-        if self.animate_translation then
-            return
-        end
         local nodes_in_range = self.node_range:getAllNodes()
         for _,node in ipairs(nodes_in_range) do
             local x,y = node.position[1], node.position[2]
@@ -150,9 +147,6 @@ local function Main()
     end
 
     function self.drawNodeBorderValues()
-        if self.animate_translation then
-            return
-        end
         local nodes_in_border = self.node_range:getAllBoderNodes()
         for _,node in ipairs(nodes_in_border) do
             local x,y = node.position[1], node.position[2]
@@ -163,10 +157,19 @@ local function Main()
         end
     end
 
+    --We request a new path every time that the GUI updates
+    function self.requestNewPath()
+        -- Ask if the requested destination point is contained
+        -- in the range, and returns a table listing nodes
+        -- from the starting point to the destination
+        self.generated_path =
+            self.node_range:getPathTo(
+                {self.m_ix,self.m_iy},
+                self.gui.canWarrantyShortest()
+            )
+    end
+
     function self.drawPath()
-        if self.animate_translation then
-            return
-        end
         if not self.generated_path then
             return
         end
@@ -180,8 +183,10 @@ local function Main()
             local next_node = self.generated_path:getNodeAtSteep(steep+1)
             if next_node then
                 local nx, ny = next_node.position[1], next_node.position[2]
-                love.graphics.line((x+0.5)*17, (y+0.5)*17,
-                                    (nx+0.5)*17, (ny+0.5)*17)
+                if math.pow(x-nx,2)+math.pow(y-ny,2) <= 2 then
+                    love.graphics.line((x+0.5)*17, (y+0.5)*17,
+                                        (nx+0.5)*17, (ny+0.5)*17)
+                end
             end
         end
         love.graphics.setLineWidth(1)
@@ -203,67 +208,75 @@ local function Main()
             local position = self.node_range:getStartNodePosition()
             local range = self.node_range.range
             if position then
-                self.updateRange(position[1], position[2])
+                self.updateRange(position[1], position[2], range)
             end
         end
     end
 
     -- This is called every time the slider of "Range" is updated
     -- or when the start position of the range has been changed
-    function self.updateRange(x,y)
-        if self.animate_translation then
+    function self.updateRange(x,y,range)
+        if self.animate_translation or not self.map_graph:hasPoint({x,y}) then
             return
         end
 
-        if self.node_range and self.map_graph:hasPoint({x,y}) then
-
-            --choose an entity to move, change their position
+        if not self.picked then
+            if portal_b.x == x and portal_b.y == y then
+                self.picked = portal_b
+            end
+            if portal_a.x == x and portal_a.y == y then
+                self.picked = portal_a
+            end
+            if self.picked then
+                return
+            end
+        else
             if self.picked.x ~= x or self.picked.y ~= y then
-                if banner.x == x and banner.y == y then
-                    self.picked = banner
-                end
-                if knight.x == x and knight.y == y then
-                    self.picked = knight
-                end
+                self.map_graph:removePortalBetween(portal_a.getPos(), portal_b.getPos())
                 self.animate_translation = flux.to(self.picked, 0.2, {x=x, y=y})
                 self.animate_translation:oncomplete(
                         --- once the animation is complete...
                         function ()
                             self.animate_translation = nil -- clear the animation
-                            self.updateRange(x,y)
+                            self.picked = nil -- "drop" the portal
+
+                            self.map_graph:createPortalBetween(portal_a.getPos(), portal_b.getPos())
+
+                            -- refresh the map, without moving the path origin
+                            local start = self.node_range:getStartNode()
+                            if start then
+                                local sx,sy = start.position[1], start.position[2]
+                                self.gui.setRangePosition(sx, sy)
+                                self.updateRange(sx,sy,range)
+                            end
                         end)
                 self.updateTilesToDraw()
                 return
             end
-            self.requestNewPath()
-            self.updateTilesToDraw()
         end
-    end
 
-    function self.requestNewPath()
-        local movement = nil -- use default movement
-        if self.gui.canGoDiagonal() then
-            movement = 'diagonal'
-        end
-        if self.gui.useDijkstra() then
-            self.generated_path, self.node_range =
-                self.map_graph:findPathDijkstra(knight.getPos(), banner.getPos(), movement)
-        else
-            self.generated_path, self.node_range =
-                self.map_graph:findPath(knight.getPos(), banner.getPos(), movement)
+        if self.node_range then
+
+            local movement = nil -- use default movement
+            if self.gui.canGoDiagonal() then
+                movement = 'diagonal'
+            end
+            self.node_range =
+                self.map_graph:constructNodeRange({x,y}, range, movement)
+            self.updateTilesToDraw()
         end
     end
 
     -- This is to conect the GUI to this functions,
     -- so the changes in the GUI can take effect.
-    self.updateTilesToDraw()
     self.gui.setSliderCallback(self.updateRange)
     self.gui.bindTableWeights(self.table_of_weights)
-    self.m_ix = knight.x
-    self.m_iy = knight.y
+    self.gui.setRangePosition(initial_x, initial_y)
+    self.gui.setRangeSliderValue(max_allowed_cost)
+    self.m_ix = initial_x
+    self.m_iy = initial_y
 
     return self;
 end
-
 
 return Main()
