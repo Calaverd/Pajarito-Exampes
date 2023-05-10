@@ -1,70 +1,54 @@
 local Pajarito = require("pajarito")
 local GraphicsBase = require('libs/graphics')
-local BaseEntity = require('libs/base_entity')
 
-function Portal(x,y)
-    local self = BaseEntity(16)
-    self.x = x
-    self.y = y
-    return self
-end
-
+-- A list of how to translate the directions to cords
+local movements = Pajarito.directions.movements
 
 local function Main()
     local self = GraphicsBase();
 
-    self.title = 'Portals'
+    self.title = 'Map Wrapping'
     self.gui.setDescriptionText(
-        'A map were to points are conected by a portal\n'..
-        'Click on the portal to move it towards another part.')
+        'On the settings of the map, before build, you'..
+        'can inform Pajarito to make it wrap in x, y or both')
 
     self.tile_map = {
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,1,1,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,7,5,5,5,5,5,7,1,1,1,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,7,5,7,7,7,5,7,1,3,3,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,7,5,5,7,5,5,7,1,3,3,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,3,3,3,1,1,1,1,1,1},
-        {1,1,1,1,2,2,2,2,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1,1},
-        {1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,3,3,3,9,9,1,1,1,1},
-        {1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1},
-        {1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1},
-        {1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,1,4,4,4,9,1,1,1,1},
-        {1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,4,4,4,1,1,1,1,1,1},
-        {1,1,1,1,2,2,2,2,2,1,1,1,1,4,4,4,4,4,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,7,5,5,5,5,5,7,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,7,5,7,7,7,5,7,1,3,3,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,7,5,5,7,5,5,7,1,3,3,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,7,7,7,7,7,7,7,1,3,3,3,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,2,2,2,1,1,1,1,1,1,1,1,3,3,3,3,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,3,3,3,9,9,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,1,4,3,9,9,9,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,1,4,4,4,9,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,8,8,8,2,2,1,1,1,1,1,1,4,4,4,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,2,2,2,2,2,1,1,1,1,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     }
     self.tile_map_width = #self.tile_map[1]
     self.tile_map_height = #self.tile_map
 
-    -- Define some entities that the user can click, their position
-    -- will be the position were the portals will be.
-    local portal_a = Portal(23,8)
-    local portal_b = Portal(3,8)
-
-    -- add they to a function to be draw later
-    self.drawEntities = function ()
-        portal_a.draw()
-        portal_b.draw()
-    end
-
-    self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map})
+    -- Notice how in the wrap the value is set to 3.
+    -- The aviable values are
+    -- * 1 for wrap x only
+    -- * 2 for wrap y only
+    -- * 3 for wrap x and y
+    self.map_graph = Pajarito.Graph:new({type= '2D', map= self.tile_map, wrap=3})
 
     -- This initializes all the nodes and their conections in the graph.
     -- This operation can be a little bit expensive depending on the map size
     -- Call it once before starting to use the methods of the graph object.
     self.map_graph:build()
 
-    --- Here is were we create the portal between the two points
-    self.map_graph:createPortalBetween(portal_a.getPos(), portal_b.getPos())
-
     -- Creates an special kind of object that contains all nodes
     -- in the given reach from within the given node position
-    local max_allowed_cost = 5
-    local initial_x = 5
-    local initial_y = 8
-
+    local max_allowed_cost = 8
+    local initial_x = math.floor(self.tile_map_width/2)
+    local initial_y = math.floor(self.tile_map_height/2)
     self.node_range =
         self.map_graph:constructNodeRange(
             {initial_x, initial_y},
@@ -175,6 +159,10 @@ local function Main()
             return
         end
 
+        local function getWrapPos(i, max)
+            return math.fmod(i-1,max)+1
+        end
+
         love.graphics.setColor(0.9,0.9,1)
         love.graphics.setLineWidth(2)
         for steep,node in self.generated_path:iterNodes() do
@@ -187,6 +175,18 @@ local function Main()
                 if math.pow(x-nx,2)+math.pow(y-ny,2) <= 2 then
                     love.graphics.line((x+0.5)*17, (y+0.5)*17,
                                         (nx+0.5)*17, (ny+0.5)*17)
+                else
+                    local direction = node:directionToConnected(next_node)
+                    -- print(Pajarito.directions.names[direction])
+                    if direction then
+                        local move = movements[direction]
+                        local ex, ey = x+move.x, y+move.y
+                        local sx, sy = nx-move.x, ny-move.y
+                        love.graphics.setColor(1,0,1)
+                        love.graphics.line((x+0.5)*17, (y+0.5)*17, (ex+0.5)*17, (ey+0.5)*17)
+                        love.graphics.line((sx+0.5)*17, (sy+0.5)*17, (nx+0.5)*17, (ny+0.5)*17)
+                        love.graphics.setColor(1,1,1)
+                    end
                 end
             end
         end
@@ -217,49 +217,7 @@ local function Main()
     -- This is called every time the slider of "Range" is updated
     -- or when the start position of the range has been changed
     function self.updateRange(x,y,range)
-        if self.animate_translation or not self.map_graph:hasPoint({x,y}) then
-            return
-        end
-
-        if not self.picked then
-            if portal_b.x == x and portal_b.y == y then
-                self.picked = portal_b
-            end
-            if portal_a.x == x and portal_a.y == y then
-                self.picked = portal_a
-            end
-            if self.picked then
-                return
-            end
-        else
-            if self.picked.x ~= x or self.picked.y ~= y then
-                --- clean up the existing portal.
-                self.map_graph:removePortalBetween(portal_a.getPos(), portal_b.getPos())
-                self.animate_translation = flux.to(self.picked, 0.2, {x=x, y=y})
-                self.animate_translation:oncomplete(
-                        --- once the animation is complete...
-                        function ()
-                            self.animate_translation = nil -- clear the animation
-                            self.picked = nil -- "drop" the portal
-
-                            --- make a portal for the new positions
-                            self.map_graph:createPortalBetween(portal_a.getPos(), portal_b.getPos())
-
-                            -- refresh the map, without moving the path origin
-                            local start = self.node_range:getStartNode()
-                            if start then
-                                local sx,sy = start.position[1], start.position[2]
-                                self.gui.setRangePosition(sx, sy)
-                                self.updateRange(sx,sy,range)
-                            end
-                        end)
-                self.updateTilesToDraw()
-                return
-            end
-        end
-
-        if self.node_range then
-
+        if self.node_range and self.map_graph:hasPoint({x,y}) then
             local movement = nil -- use default movement
             if self.gui.canGoDiagonal() then
                 movement = 'diagonal'
@@ -281,5 +239,6 @@ local function Main()
 
     return self;
 end
+
 
 return Main()
