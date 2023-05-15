@@ -311,7 +311,7 @@ local function Main()
             -- check if the click was inside the generated range.
             if self.node_range:hasPoint({x,y}) then
                 -- move the object final position with in the graph
-                self.map_graph:translasteObject(current_entity,{x,y})
+                self.map_graph:translateObject(current_entity,{x,y})
                 -- move the object drawing position using flux
                 for _,node in self.generated_path:iterNodes() do
                     local steep_x, steep_y = node.position[1], node.position[2]

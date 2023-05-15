@@ -63,12 +63,6 @@ local function Main()
     -- Call it once before starting to use the methods of the graph object.
     self.map_graph:build()
 
-
-    -- Creates an special kind of object that contains the path and the
-    -- explored nodes (node range) to reach that position
-    self.generated_path, self.node_range =
-                self.map_graph:findPath(knight.getPos(), banner.getPos())
-
     -- We define a set of weights or traversal cost
     -- for the posible tiles on the map
     self.table_of_weights = {}
@@ -82,6 +76,11 @@ local function Main()
     self.table_of_weights[9] = 0 --water    tile 9 -> 0
     -- Inform to the graph to take the weights into acount
     self.map_graph:setWeightMap(self.table_of_weights)
+
+    -- Creates an special kind of object that contains the path and the
+    -- explored nodes (node range) to reach that position
+    self.generated_path, self.node_range =
+                self.map_graph:findPath(knight.getPos(), banner.getPos())
 
     -- This method used to update the tiles to draw
     -- and is called only once an update has been made.

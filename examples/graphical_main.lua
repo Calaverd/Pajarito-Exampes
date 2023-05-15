@@ -8,6 +8,7 @@ local function Main()
     self.gui.setDescriptionText(
         'This a graphical representation of the text based example '..
         "used at the start of the Pajarito documentation.")
+    self.gui.setMinimal(true)
 
     self.tile_map = {
         { 1, 3, 2, 3, 1, 1, 1 },
@@ -52,7 +53,10 @@ local function Main()
     -- Inform to the graph to take the weights into acount
     self.map_graph:setWeightMap(self.table_of_weights)
 
-    self.generated_path = nil -- define this for a later use.
+      -- Creates an special kind of object that contains the path and the
+    -- explored nodes (node range) to reach that position
+    self.generated_path, self.node_range =
+                self.map_graph:findPath({4,4}, {1,1})
 
     -- This method used to update the tiles to draw
     -- and is called only once an update has been made.
@@ -126,18 +130,6 @@ local function Main()
         end
     end
 
-    --We request a new path every time that the GUI updates
-    function self.requestNewPath()
-        -- Ask if the requested destination point is contained
-        -- in the range, and returns a table listing nodes
-        -- from the starting point to the destination
-        self.generated_path =
-            self.node_range:getPathTo(
-                {self.m_ix,self.m_iy},
-                self.gui.canWarrantyShortest()
-            )
-    end
-
     function self.drawPath()
         if not self.generated_path then
             return
@@ -160,48 +152,7 @@ local function Main()
         love.graphics.setColor(1,1,1)
     end
 
-    --- Changes the tile value of the given point in
-    -- the graph and on the tile map.
-    function self.updateMapTile(x,y,new_value)
-        if self.map_graph and self.map_graph:hasPoint({x,y}) then
-            -- We use this table to draw the map
-            -- so we have to update it
-            self.tile_map[y][x] = new_value
-
-            -- Update the node tile in the graph
-            self.map_graph:updateNodeTile({x,y},new_value)
-
-            -- Update the range with the new map info.
-            local position = self.node_range:getStartNodePosition()
-            local range = self.node_range.range
-            if position then
-                self.updateRange(position[1], position[2], range)
-            end
-        end
-    end
-
-    -- This is called every time the slider of "Range" is updated
-    -- or when the start position of the range has been changed
-    function self.updateRange(x,y,range)
-        if self.node_range and self.map_graph:hasPoint({x,y}) then
-            local movement = nil -- use default movement
-            if self.gui.canGoDiagonal() then
-                movement = 'diagonal'
-            end
-            self.node_range =
-                self.map_graph:constructNodeRange({x,y}, range, movement)
-            self.updateTilesToDraw()
-        end
-    end
-
-    -- This is to conect the GUI to this functions,
-    -- so the changes in the GUI can take effect.
-    self.gui.setSliderCallback(self.updateRange)
-    self.gui.bindTableWeights(self.table_of_weights)
-    self.gui.setRangePosition(initial_x, initial_y)
-    self.gui.setRangeSliderValue(max_allowed_cost)
-    self.m_ix = initial_x
-    self.m_iy = initial_y
+    self.updateTilesToDraw();
 
     return self;
 end

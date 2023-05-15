@@ -63,7 +63,7 @@ local function Main()
     -- here, for didactic purposes are mixed.
     -- You can use the style that you like most.
 
-    local dir = Pajarito.directions.get()
+    local dir = Pajarito.directions.values
 
     local mergeDirections = Pajarito.directions.mergeDirections
     -- If you think that the names are long, or want
@@ -203,7 +203,7 @@ local function Main()
         local tileset_walls = self.getTilesetWalls()
         local list_of_wall_tiles = self.getListOfWallTiles()
         tileset_walls:clear()
-        local dir_enum = Pajarito.directions.get()
+        local dir_enum = Pajarito.directions.values
         -- We define a map were each direction is
         -- maped to one specific tile in the tileset
         local direction_to_tile = {
