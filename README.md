@@ -1,6 +1,6 @@
 # Pajarito-Examples
 
-![Main graphical](/rcs/sample.gif)
+![Main graphical](./rcs/sample.gif)
 
 This is a set of examples using the [Pajarito](https://github.com/calaverd/PajaritoPathfinder), a pathfinder library.
 
