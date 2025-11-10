@@ -9,7 +9,9 @@ To run the examples you will need to clone this repo and have [love2d](https://l
 ```bash
     love .
 ```
-You can see their code in the `examples` directory. Notice that the examples try to ignore the graphical boilerplate to focus on the relevant showcase of the library.
+Or try they on the [online live demo](https://calaverd-dev.blog/es/lab/Pajarito/)
+
+You can see their code in the `examples` directory. Notice that the examples will try to ignore the graphical boilerplate to focus on the relevant showcase of the library.
 
 ## License
 
