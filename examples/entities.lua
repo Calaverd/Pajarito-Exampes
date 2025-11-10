@@ -179,37 +179,34 @@ local function Main()
                 tileset:add(list_of_tiles[map_tile],x*17,y*17)
 
                 -- We do not draw the ranges if the animation is running
-                if self.animate_translation then
-                    goto continue
-                end
+                if not self.animate_translation then
+                    -- Here we ask if on that position
+                    -- the range has node of that kind
+                    -- Fear not nested loops!
+                    -- All "hasPoint" methods do checks in linear time.
+                    if self.gui.canShowRangeNodes() then
+                        if self.node_range:hasPoint({x,y}) then
+                            if self.node_range:isStartNodePosition({x,y}) then
+                                tileset:add(tile_for_range_start, x*17, y*17)
+                            else
+                                tileset:add(tile_for_range, x*17, y*17)
+                            end
+                        end
+                    end
 
-                -- Here we ask if on that position
-                -- the range has node of that kind
-                -- Fear not nested loops!
-                -- All "hasPoint" methods do checks in linear time.
-                if self.gui.canShowRangeNodes() then
-                    if self.node_range:hasPoint({x,y}) then
-                        if self.node_range:isStartNodePosition({x,y}) then
-                            tileset:add(tile_for_range_start, x*17, y*17)
-                        else
-                            tileset:add(tile_for_range, x*17, y*17)
+                    if self.gui.canShowRangeBorder() then
+                        local node_id = self.node_range:borderHasPoint({x,y})
+                        if node_id then
+                            local cost = self.node_range:getBorderWeight(node_id --[[@as integer]])
+                            if cost == -1 then
+                                tileset:add(tile_for_border_unpassable, x*17, y*17)
+                            else
+                                tileset:add(tile_for_border, x*17, y*17)
+                            end
                         end
                     end
                 end
 
-                if self.gui.canShowRangeBorder() then
-                    local node_id = self.node_range:borderHasPoint({x,y})
-                    if node_id then
-                        local cost = self.node_range:getBorderWeight(node_id --[[@as integer]])
-                        if cost == -1 then
-                            tileset:add(tile_for_border_unpassable, x*17, y*17)
-                        else
-                            tileset:add(tile_for_border, x*17, y*17)
-                        end
-                    end
-                end
-
-                ::continue::
                 tileset:setColor(1,1,1,1)
             end
         end
